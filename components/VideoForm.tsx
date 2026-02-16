@@ -19,6 +19,7 @@ interface Tag {
   name: string;
   tagCategoryId: string;
   tagCategory?: { name: string };
+  categoryName?: string;
 }
 
 interface TagCategory {
@@ -150,7 +151,9 @@ export function VideoForm({ video }: VideoFormProps) {
     else setArr([...arr, id]);
   }
 
-  const allTags = tagCategories.flatMap((c) => c.tags);
+  const allTags = tagCategories.flatMap((c) =>
+    c.tags.map((t) => ({ ...t, categoryName: c.name }))
+  );
   const isFromYouTube = video?.sourceType === "YOUTUBE";
 
   function formatCount(n: number | undefined): string {
@@ -424,8 +427,8 @@ export function VideoForm({ video }: VideoFormProps) {
                 onChange={() => toggleMulti(t.id, tagIds, setTagIds)}
               />
               <span className="text-sm">
+                {t.categoryName ? `${t.categoryName}: ` : ""}
                 {t.name}
-                {t.tagCategory ? ` (${t.tagCategory.name})` : ""}
               </span>
             </label>
           ))}

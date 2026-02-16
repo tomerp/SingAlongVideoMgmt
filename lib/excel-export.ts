@@ -6,7 +6,7 @@ type VideoWithRelations = {
   genre: { name: string };
   singers: { singer: { name: string } }[];
   holidays: { holiday: { name: string } }[];
-  tags: { tag: { name: string } }[];
+  tags: { tag: { name: string; tagCategory?: { name: string } } }[];
   language: string | null;
   tempo: string | null;
   qualityScore: number | null;
@@ -62,7 +62,16 @@ export async function exportVideosToExcel(
       genre: v.genre?.name,
       singers: v.singers?.map((s) => s.singer?.name).join(", "),
       holidays: v.holidays?.map((h) => h.holiday?.name).join(", "),
-      tags: v.tags?.map((t) => t.tag?.name).join(", "),
+      tags: v.tags
+        ?.map((t) =>
+          t.tag
+            ? t.tag.tagCategory
+              ? `${t.tag.tagCategory.name}: ${t.tag.name}`
+              : t.tag.name
+            : ""
+        )
+        .filter(Boolean)
+        .join(", "),
       language: v.language,
       tempo: v.tempo,
       qualityScore: v.qualityScore,

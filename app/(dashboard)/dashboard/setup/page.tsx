@@ -629,7 +629,9 @@ function TagsTab({
                   </form>
                 ) : (
                   <>
-                    <span className="text-sm text-slate-800">{tag.name}</span>
+                    <span className="text-sm text-slate-800">
+                      {cat.name}: {tag.name}
+                    </span>
                     <div className="flex gap-2">
                       <button
                         type="button"

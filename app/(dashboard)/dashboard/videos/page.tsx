@@ -423,6 +423,7 @@ export default function VideosPage() {
                       checked={tagIds.includes(t.id)}
                       onChange={() => toggleMulti(t.id, tagIds, setTagIds)}
                     />
+                    {t.categoryName ? `${t.categoryName}: ` : ""}
                     {t.name}
                   </label>
                 ))}
