@@ -207,11 +207,13 @@ Tags show values without category context.
 
 ---
 
-## 10. Recently Published Logic
+## 10. Recently Published Logic ✅
 
 ### Required Behavior
-- Recently Published = within last 60 days.
-- Optionally configurable in Setup.
+- ✅ Recently Published = within last N days (default 60).
+- ✅ Configurable in Setup (Settings tab).
+
+**Implemented** – New Setting model stores `recentlyPublishedDays`. Setup has Settings tab to configure N (1–365). Videos advanced filters include "Recently published (within N days)" checkbox; when checked, filters by publishDateFrom = today − N days.
 
 ---
 

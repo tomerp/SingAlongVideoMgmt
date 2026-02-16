@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-type Tab = "genres" | "singers" | "holidays" | "tags";
+type Tab = "genres" | "singers" | "holidays" | "tags" | "settings";
 
 interface Genre {
   id: string;
@@ -198,6 +198,9 @@ export default function SetupPage() {
   const [singers, setSingers] = useState<Singer[]>([]);
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [tagCategories, setTagCategories] = useState<TagCategory[]>([]);
+  const [recentlyPublishedDays, setRecentlyPublishedDays] = useState(60);
+  const [settingsLoading, setSettingsLoading] = useState(false);
+  const [settingsError, setSettingsError] = useState("");
 
   const fetchGenres = useCallback(async () => {
     const res = await fetch("/api/genres");
@@ -224,18 +227,26 @@ export default function SetupPage() {
     return data;
   }, []);
 
+  const fetchSettings = useCallback(async () => {
+    const res = await fetch("/api/settings");
+    const data = await res.json();
+    setRecentlyPublishedDays(data.recentlyPublishedDays ?? 60);
+  }, []);
+
   useEffect(() => {
     fetchGenres();
     fetchSingers();
     fetchHolidays();
     fetchTagCategories();
-  }, [fetchGenres, fetchSingers, fetchHolidays, fetchTagCategories]);
+    fetchSettings();
+  }, [fetchGenres, fetchSingers, fetchHolidays, fetchTagCategories, fetchSettings]);
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "genres", label: "Genres" },
     { id: "singers", label: "Singers" },
     { id: "holidays", label: "Holidays" },
     { id: "tags", label: "Tag Categories & Tags" },
+    { id: "settings", label: "Settings" },
   ];
 
   return (
@@ -363,6 +374,75 @@ export default function SetupPage() {
           categories={tagCategories}
           fetchCategories={fetchTagCategories}
         />
+      )}
+      {tab === "settings" && (
+        <div className="space-y-6">
+          <div className="rounded border border-slate-200 bg-white p-4">
+            <h3 className="mb-3 font-semibold text-slate-800">
+              Recently Published
+            </h3>
+            <p className="mb-3 text-sm text-slate-600">
+              &quot;Recently published&quot; filter = videos published within the
+              last N days.
+            </p>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setSettingsError("");
+                setSettingsLoading(true);
+                try {
+                  const res = await fetch("/api/settings", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      recentlyPublishedDays: recentlyPublishedDays,
+                    }),
+                  });
+                  const data = await res.json();
+                  if (!res.ok) throw data;
+                } catch (err: unknown) {
+                  setSettingsError(
+                    (err as { error?: string })?.error || "Failed to save"
+                  );
+                } finally {
+                  setSettingsLoading(false);
+                }
+              }}
+              className="flex items-end gap-2"
+            >
+              <div>
+                <label className="mb-1 block text-xs text-slate-600">
+                  Days
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={365}
+                  value={recentlyPublishedDays}
+                  onChange={(e) =>
+                    setRecentlyPublishedDays(
+                      Math.max(
+                        1,
+                        Math.min(365, parseInt(e.target.value, 10) || 60)
+                      )
+                    )
+                  }
+                  className="w-20 rounded border border-slate-300 px-2 py-1 text-sm"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={settingsLoading}
+                className="rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+              >
+                {settingsLoading ? "Saving..." : "Save"}
+              </button>
+            </form>
+            {settingsError && (
+              <p className="mt-2 text-sm text-red-600">{settingsError}</p>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

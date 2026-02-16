@@ -20,6 +20,12 @@ enum PlaylistType {
   LOCAL
 }
 
+model Setting {
+  id    String   @id @default(cuid())
+  key   String   @unique
+  value String
+}
+
 // Auth - simple single-user
 model User {
   id           String   @id @default(cuid())

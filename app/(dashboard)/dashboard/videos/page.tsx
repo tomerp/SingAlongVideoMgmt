@@ -71,6 +71,8 @@ export default function VideosPage() {
     new Date().toISOString().slice(0, 10)
   );
   const [createEventNotes, setCreateEventNotes] = useState("");
+  const [recentlyPublished, setRecentlyPublished] = useState(false);
+  const [recentlyPublishedDays, setRecentlyPublishedDays] = useState(60);
 
   const fetchVideos = useCallback(async () => {
     setLoading(true);
@@ -84,6 +86,11 @@ export default function VideosPage() {
     if (singerIds.length) params.set("singerIds", singerIds.join(","));
     if (holidayIds.length) params.set("holidayIds", holidayIds.join(","));
     if (tagIds.length) params.set("tagIds", tagIds.join(","));
+    if (recentlyPublished && recentlyPublishedDays) {
+      const from = new Date();
+      from.setDate(from.getDate() - recentlyPublishedDays);
+      params.set("publishDateFrom", from.toISOString());
+    }
     params.set("sort", sort);
     params.set("order", order);
     params.set("page", String(page));
@@ -116,6 +123,8 @@ export default function VideosPage() {
     singerIds,
     holidayIds,
     tagIds,
+    recentlyPublished,
+    recentlyPublishedDays,
     sort,
     order,
     page,
@@ -126,6 +135,9 @@ export default function VideosPage() {
     fetch("/api/singers").then((r) => r.json()).then(setSingers);
     fetch("/api/holidays").then((r) => r.json()).then(setHolidays);
     fetch("/api/tag-categories").then((r) => r.json()).then(setTagCategories);
+    fetch("/api/settings").then((r) => r.json()).then((data) => {
+      setRecentlyPublishedDays(data.recentlyPublishedDays ?? 60);
+    });
   }, []);
 
   useEffect(() => {
@@ -378,6 +390,20 @@ export default function VideosPage() {
                 <option value="true">Yes</option>
                 <option value="false">No</option>
               </select>
+            </div>
+            <div>
+              <label className="mr-1 flex items-center gap-1 text-xs">
+                <input
+                  type="checkbox"
+                  checked={recentlyPublished}
+                  onChange={(e) => {
+                    setRecentlyPublished(e.target.checked);
+                    setPage(1);
+                  }}
+                  className="rounded"
+                />
+                Recently published (within {recentlyPublishedDays} days)
+              </label>
             </div>
             <div>
               <label className="block text-xs">Singers (all)</label>
