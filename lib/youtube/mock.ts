@@ -13,6 +13,8 @@ export interface MockVideo {
   duration: number;
   publishDate: string;
   viewCount: number;
+  likeCount?: number;
+  commentCount?: number;
   url: string;
 }
 

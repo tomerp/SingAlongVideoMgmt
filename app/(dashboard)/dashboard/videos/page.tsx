@@ -20,6 +20,9 @@ interface Video {
   qualityScore: number | null;
   usedCount: number;
   lastUsedDate: string | null;
+  viewCount?: number;
+  likeCount?: number;
+  commentCount?: number;
 }
 
 function formatDuration(sec: number | null): string {
@@ -27,6 +30,13 @@ function formatDuration(sec: number | null): string {
   const m = Math.floor(sec / 60);
   const s = sec % 60;
   return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function formatCount(n: number | undefined): string {
+  if (n == null || n === 0) return "-";
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return String(n);
 }
 
 export default function VideosPage() {
@@ -436,6 +446,9 @@ export default function VideosPage() {
                   <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">
                     Title
                   </th>
+                  <th className="px-4 py-2 text-right text-xs font-medium text-slate-500">
+                    Views
+                  </th>
                   <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">
                     Singers
                   </th>
@@ -478,6 +491,9 @@ export default function VideosPage() {
                       >
                         {v.title}
                       </Link>
+                    </td>
+                    <td className="px-4 py-2 text-right text-sm text-slate-600">
+                      {formatCount(v.viewCount)}
                     </td>
                     <td className="px-4 py-2 text-sm text-slate-600">
                       {singerNames(v)}

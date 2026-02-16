@@ -81,6 +81,8 @@ model Video {
   duration         Int?     // seconds
   publishDate      DateTime?
   viewCount        Int      @default(0)
+  likeCount        Int      @default(0)
+  commentCount     Int      @default(0)
   url              String?
   sourceType       SourceType
   youtubeVideoId   String?  @unique

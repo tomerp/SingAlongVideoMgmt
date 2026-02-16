@@ -153,10 +153,12 @@ Currently tags and categories can only be deleted and re-created.
 
 ---
 
-## 7. Add View Count from YouTube Sync
+## 7. Add View Count from YouTube Sync ✅
 
 ### Problem
 View count is not currently stored or displayed.
+
+**Implemented** – Schema stores `viewCount`, `likeCount`, `commentCount`; mock fixtures and real YouTube sync populate all three; videos table shows Views column with formatted counts (e.g. 1.2M); "Most Viewed" sort works via API.
 
 ### Required Behavior
 - Store view count during YouTube sync.

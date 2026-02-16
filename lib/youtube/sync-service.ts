@@ -44,7 +44,7 @@ export async function syncChannels(
 
   for (const channelId of channelIds) {
     let channelName: string | undefined;
-    let videos: { id: string; title: string; description?: string; duration: number; publishDate: Date; viewCount: number; url: string }[];
+    let videos: { id: string; title: string; description?: string; duration: number; publishDate: Date; viewCount: number; likeCount: number; commentCount: number; url: string }[];
     let playlists: { id: string; channelId: string; name: string; videoIds: string[] }[];
 
     if (source === "mock") {
@@ -55,6 +55,8 @@ export async function syncChannels(
       videos = mockVids.map((v) => ({
         ...v,
         publishDate: new Date(v.publishDate),
+        likeCount: v.likeCount ?? 0,
+        commentCount: v.commentCount ?? 0,
       }));
       playlists = getMockPlaylists(channelId);
       for (const pl of playlists) {
@@ -92,6 +94,8 @@ export async function syncChannels(
             duration: v.duration,
             publishDate: v.publishDate,
             viewCount: v.viewCount,
+            likeCount: v.likeCount,
+            commentCount: v.commentCount,
             url: v.url,
           },
         });
@@ -104,6 +108,8 @@ export async function syncChannels(
             duration: v.duration,
             publishDate: v.publishDate,
             viewCount: v.viewCount,
+            likeCount: v.likeCount,
+            commentCount: v.commentCount,
             url: v.url,
             sourceType: SourceType.YOUTUBE,
             youtubeVideoId: v.id,

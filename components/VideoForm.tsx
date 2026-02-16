@@ -46,6 +46,10 @@ interface VideoFormProps {
     singers?: { singerId: string; singer?: { id: string; name: string } }[];
     holidays?: { holidayId: string }[];
     tags?: { tagId: string }[];
+    viewCount?: number;
+    likeCount?: number;
+    commentCount?: number;
+    publishDate?: string | Date | null;
   };
 }
 
@@ -149,6 +153,13 @@ export function VideoForm({ video }: VideoFormProps) {
   const allTags = tagCategories.flatMap((c) => c.tags);
   const isFromYouTube = video?.sourceType === "YOUTUBE";
 
+  function formatCount(n: number | undefined): string {
+    if (n == null || n === 0) return "—";
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+    return String(n);
+  }
+
   const readOnlyInputClass =
     "w-full rounded border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700 cursor-not-allowed";
 
@@ -205,6 +216,42 @@ export function VideoForm({ video }: VideoFormProps) {
                 URL
               </label>
               <input type="text" value={url || ""} readOnly className={readOnlyInputClass} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-600">
+                Views
+              </label>
+              <p className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">
+                {formatCount(video?.viewCount)}
+              </p>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-600">
+                Likes
+              </label>
+              <p className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">
+                {formatCount(video?.likeCount)}
+              </p>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-600">
+                Comments
+              </label>
+              <p className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">
+                {formatCount(video?.commentCount)}
+              </p>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-600">
+                Published
+              </label>
+              <p className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">
+                {video?.publishDate
+                  ? new Date(video.publishDate).toLocaleDateString()
+                  : "—"}
+              </p>
             </div>
           </div>
         </section>

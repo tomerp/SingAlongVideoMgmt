@@ -51,6 +51,8 @@
       "duration": 198,
       "publishDate": "2020-03-15",
       "viewCount": 1250000,
+      "likeCount": 15200,
+      "commentCount": 342,
       "url": "https://www.youtube.com/watch?v=mock-vid-1"
     },
     {
@@ -60,6 +62,8 @@
       "duration": 225,
       "publishDate": "2019-08-22",
       "viewCount": 890000,
+      "likeCount": 11100,
+      "commentCount": 220,
       "url": "https://www.youtube.com/watch?v=mock-vid-2"
     },
     {
@@ -69,6 +73,8 @@
       "duration": 185,
       "publishDate": "2021-01-10",
       "viewCount": 456000,
+      "likeCount": 5700,
+      "commentCount": 110,
       "url": "https://www.youtube.com/watch?v=mock-vid-3"
     },
     {
@@ -78,6 +84,8 @@
       "duration": 210,
       "publishDate": "2020-11-05",
       "viewCount": 234000,
+      "likeCount": 2900,
+      "commentCount": 58,
       "url": "https://www.youtube.com/watch?v=mock-vid-4"
     },
     {
@@ -87,6 +95,8 @@
       "duration": 195,
       "publishDate": "2018-06-20",
       "viewCount": 2100000,
+      "likeCount": 26200,
+      "commentCount": 520,
       "url": "https://www.youtube.com/watch?v=mock-vid-5"
     },
     {
@@ -96,6 +106,8 @@
       "duration": 243,
       "publishDate": "2019-04-12",
       "viewCount": 1890000,
+      "likeCount": 23600,
+      "commentCount": 470,
       "url": "https://www.youtube.com/watch?v=mock-vid-6"
     },
     {
@@ -105,6 +117,8 @@
       "duration": 201,
       "publishDate": "2020-07-04",
       "viewCount": 3200000,
+      "likeCount": 40000,
+      "commentCount": 800,
       "url": "https://www.youtube.com/watch?v=mock-vid-7"
     },
     {
@@ -114,6 +128,8 @@
       "duration": 355,
       "publishDate": "2021-05-30",
       "viewCount": 567000,
+      "likeCount": 7100,
+      "commentCount": 140,
       "url": "https://www.youtube.com/watch?v=mock-vid-8"
     },
     {
@@ -123,6 +139,8 @@
       "duration": 198,
       "publishDate": "2022-02-14",
       "viewCount": 234000,
+      "likeCount": 2900,
+      "commentCount": 58,
       "url": "https://www.youtube.com/watch?v=mock-vid-9"
     },
     {
@@ -132,6 +150,8 @@
       "duration": 267,
       "publishDate": "2019-09-01",
       "viewCount": 890000,
+      "likeCount": 11100,
+      "commentCount": 220,
       "url": "https://www.youtube.com/watch?v=mock-vid-10"
     },
     {
@@ -141,6 +161,8 @@
       "duration": 1200,
       "publishDate": "2020-12-20",
       "viewCount": 123000,
+      "likeCount": 1500,
+      "commentCount": 30,
       "url": "https://www.youtube.com/watch?v=mock-vid-11"
     },
     {
@@ -150,6 +172,8 @@
       "duration": 178,
       "publishDate": "2021-04-15",
       "viewCount": 345000,
+      "likeCount": 4300,
+      "commentCount": 85,
       "url": "https://www.youtube.com/watch?v=mock-vid-12"
     },
     {
@@ -159,6 +183,8 @@
       "duration": 95,
       "publishDate": "2018-05-14",
       "viewCount": 567000,
+      "likeCount": 7100,
+      "commentCount": 140,
       "url": "https://www.youtube.com/watch?v=mock-vid-13"
     },
     {
@@ -168,6 +194,8 @@
       "duration": 254,
       "publishDate": "2019-11-11",
       "viewCount": 1560000,
+      "likeCount": 19500,
+      "commentCount": 390,
       "url": "https://www.youtube.com/watch?v=mock-vid-14"
     },
     {
@@ -177,6 +205,8 @@
       "duration": 189,
       "publishDate": "2020-02-28",
       "viewCount": 189000,
+      "likeCount": 2400,
+      "commentCount": 47,
       "url": "https://www.youtube.com/watch?v=mock-vid-15"
     }
   ]

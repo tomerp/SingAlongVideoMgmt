@@ -13,6 +13,8 @@ export interface YouTubeVideo {
   duration: number; // seconds
   publishDate: Date;
   viewCount: number;
+  likeCount: number;
+  commentCount: number;
   url: string;
 }
 
@@ -140,6 +142,8 @@ export async function getChannelVideos(
         duration,
         publishDate,
         viewCount: parseInt(item.statistics?.viewCount || "0", 10),
+        likeCount: parseInt(item.statistics?.likeCount || "0", 10),
+        commentCount: parseInt(item.statistics?.commentCount || "0", 10),
         url: `https://www.youtube.com/watch?v=${item.id}`,
       });
     }
@@ -190,6 +194,8 @@ export async function getPlaylistVideos(
         duration,
         publishDate,
         viewCount: parseInt(item.statistics?.viewCount || "0", 10),
+        likeCount: parseInt(item.statistics?.likeCount || "0", 10),
+        commentCount: parseInt(item.statistics?.commentCount || "0", 10),
         url: `https://www.youtube.com/watch?v=${item.id}`,
       });
     }
