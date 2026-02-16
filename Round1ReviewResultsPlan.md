@@ -236,3 +236,143 @@ Same checkbox problem on videos list. Can reuse SingerAutocomplete later. Out of
 - **Empty input:** Don't create singer with empty/whitespace name.
 - **Case sensitivity:** Search and find-or-create use case-insensitive matching to avoid "John" vs "john" duplicates.
 - **Hebrew/RTL:** Ensure input and dropdown work with RTL if needed.
+
+---
+
+---
+
+# Implementation Plan: Item 3 – Improve Event Creation Workflow
+
+*Source: Round1ReviewResults.md, P0 Item 3*
+
+---
+
+## Problem Summary
+
+- Event Builder (`/dashboard/events/new`) fetches up to 500 videos with no filter params.
+- It offers only a simple title search – no genre, singers, holidays, tags, quality, etc.
+- Filtering logic would need to be duplicated if we added advanced filters to Event Builder.
+- Users want to filter in Videos tab (which has full filters) and create an event from the filtered selection.
+
+---
+
+## Current State
+
+| Location | Behavior |
+|----------|----------|
+| **Videos page** (`dashboard/videos/page.tsx`) | Full advanced filters (q, genre, language, quality, active, singers, holidays, tags). Fetches via `/api/videos` with params. No row selection. |
+| **Event Builder** (`dashboard/events/new/page.tsx`) | Fetches `/api/videos?limit=500` with no filters. Simple title search for "Add videos". Supports add, remove, reorder via drag. |
+| **Event detail** (`dashboard/events/[id]/page.tsx`) | Read-only. No add/remove/reorder. |
+| **Event PATCH API** | Already supports `name`, `eventDate`, `notes`, `videoIds`. Backend ready for full editing. |
+
+---
+
+## Required Behavior
+
+1. User filters videos in Videos tab.
+2. User selects multiple videos (checkboxes).
+3. User clicks "Create Event from Selection".
+4. Event is created and editable afterward.
+
+Event screen must support: adding songs, removing songs, reordering songs.
+
+**Acceptance Criteria:**
+- Advanced filters do not need duplication in Event screen.
+- Event editing fully supported after creation.
+
+---
+
+## Dependency: Item 4
+
+"Event is created and editable afterward" and "Event screen must support add/remove/reorder" require Item 4 (Enable Editing Existing Events). The Event detail page must become an edit page. This plan assumes Item 4 will be implemented (or done in parallel). The "Create Event from Selection" flow will redirect to the event page; if Item 4 is done, that page will support editing.
+
+---
+
+## Implementation Plan
+
+### 1. Add Row Selection to Videos Page
+
+**File:** `app/(dashboard)/dashboard/videos/page.tsx`
+
+- Add state: `selectedVideoIds: string[]` (or `Set<string>`).
+- Add checkbox column (or row checkbox) to the video table.
+- "Select all on page" / "Clear selection" helpers.
+- Consider: selection persists across pagination? Options:
+  - **A:** Selection is page-local only (simpler). User selects on current page.
+  - **B:** Selection accumulates across pages (select on page 1, go to page 2, select more). More complex.
+- **Recommendation:** Start with page-local selection. User can filter to get desired set on one page, then select. If result set is large, they can adjust filters.
+
+---
+
+### 2. "Create Event from Selection" Button
+
+**File:** `app/(dashboard)/dashboard/videos/page.tsx`
+
+- Show button when `selectedVideoIds.length > 0`.
+- Placement: near "Add Video" / "Export Excel" in the header, or a floating action bar when selection is non-empty.
+- On click: open modal or navigate.
+
+---
+
+### 3. Create Event Flow
+
+**Option A – Modal then redirect**
+- Modal: "Create Event" with fields: Name (required), Date (default today), Notes (optional).
+- User fills and clicks "Create".
+- `POST /api/events` with `name`, `eventDate`, `notes`, `videoIds: selectedVideoIds` (respecting current order from table).
+- On success: redirect to `/dashboard/events/[id]` (event detail/edit).
+- Clear selection.
+
+**Option B – Quick create then edit**
+- "Create Event" with default name (e.g. "Event [date]") and today's date.
+- POST immediately, redirect to event edit.
+- User refines name/date/notes there.
+
+**Recommendation:** Option A – gives user control over name/date up front.
+
+---
+
+### 4. Preserve Video Order
+
+- Videos page table has a sort order (title, quality, etc.). Use that order for `videoIds` when creating the event.
+- Pass `videos.filter(v => selectedVideoIds.includes(v.id))` in table order to preserve order.
+
+---
+
+### 5. Event Edit Screen – Add Videos (No Filter Duplication)
+
+Per "Advanced filters do not need duplication in Event screen":
+
+- Event edit screen (Item 4) will have an "Add videos" section.
+- Use a **simple search input** only: `q` (title/description search) via `/api/videos?q=...&limit=50`.
+- No genre, singers, holidays, tags, quality filters in the Event screen.
+- Full advanced filters stay only in Videos tab.
+- When user wants to add videos that match complex criteria, they use: Videos tab → filter → select → add to event via "Create Event from Selection", or (for existing event) could add a "Add from Videos" link that opens Videos tab with a callback? Simpler: just use search for add-videos in event edit.
+
+---
+
+## File Change Summary
+
+| File | Changes |
+|------|---------|
+| `app/(dashboard)/dashboard/videos/page.tsx` | Add `selectedVideoIds` state, checkbox column, "Create Event from Selection" button, modal for name/date/notes, POST create, redirect |
+| `app/(dashboard)/dashboard/events/[id]/page.tsx` | (Item 4) Convert to edit page: add/remove/reorder, edit name/date/notes. Add simple "Add videos" search. |
+
+---
+
+## Acceptance Criteria Checklist
+
+- [ ] User can filter videos in Videos tab (existing).
+- [ ] User can select multiple videos (new checkboxes).
+- [ ] User can click "Create Event from Selection" (new button).
+- [ ] Event is created with selected videos and redirects to event page.
+- [ ] Event page supports add/remove/reorder (Item 4).
+- [ ] Advanced filters are not duplicated in Event screen (only simple search when adding).
+
+---
+
+## Edge Cases
+
+- **Empty selection:** Button disabled or hidden when no videos selected.
+- **Pagination:** Selection is page-local. User filters to narrow results if needed.
+- **Order:** Use table display order for initial event setlist.

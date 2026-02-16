@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { sortByHebrew } from "@/lib/hebrew-sort";
 
 interface Singer {
@@ -29,6 +30,7 @@ function formatDuration(sec: number | null): string {
 }
 
 export default function VideosPage() {
+  const router = useRouter();
   const [videos, setVideos] = useState<Video[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -51,6 +53,14 @@ export default function VideosPage() {
   const [singerIds, setSingerIds] = useState<string[]>([]);
   const [holidayIds, setHolidayIds] = useState<string[]>([]);
   const [tagIds, setTagIds] = useState<string[]>([]);
+  const [selectedVideoIds, setSelectedVideoIds] = useState<Set<string>>(new Set());
+  const [createEventModalOpen, setCreateEventModalOpen] = useState(false);
+  const [createEventLoading, setCreateEventLoading] = useState(false);
+  const [createEventName, setCreateEventName] = useState("");
+  const [createEventDate, setCreateEventDate] = useState(
+    new Date().toISOString().slice(0, 10)
+  );
+  const [createEventNotes, setCreateEventNotes] = useState("");
 
   const fetchVideos = useCallback(async () => {
     setLoading(true);
@@ -69,9 +79,9 @@ export default function VideosPage() {
     params.set("page", String(page));
     const res = await fetch(`/api/videos?${params}`);
     const data = await res.json();
-    let vids = data.videos;
+    let vids: Video[] = data.videos || [];
     if (sort === "title" && vids.length) {
-      vids = sortByHebrew(vids, (v) => v.title);
+      vids = sortByHebrew(vids, (v: Video) => v.title);
       if (order === "desc") vids = vids.reverse();
     }
     setVideos(vids);
@@ -119,11 +129,89 @@ export default function VideosPage() {
     c.tags.map((t) => ({ ...t, categoryName: c.name }))
   );
 
+  const selectedCount = selectedVideoIds.size;
+  const selectedVideosOrdered = videos.filter((v) =>
+    selectedVideoIds.has(v.id)
+  );
+
+  function toggleVideoSelection(id: string) {
+    setSelectedVideoIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAllOnPage() {
+    if (selectedCount === videos.length) {
+      setSelectedVideoIds(new Set());
+    } else {
+      setSelectedVideoIds(new Set(videos.map((v) => v.id)));
+    }
+  }
+
+  function openCreateEventModal() {
+    setCreateEventName("");
+    setCreateEventDate(new Date().toISOString().slice(0, 10));
+    setCreateEventNotes("");
+    setCreateEventModalOpen(true);
+  }
+
+  async function handleCreateEvent(e: React.FormEvent) {
+    e.preventDefault();
+    if (!createEventName.trim()) return;
+    setCreateEventLoading(true);
+    try {
+      const res = await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: createEventName.trim(),
+          eventDate: new Date(createEventDate).toISOString(),
+          notes: createEventNotes.trim() || null,
+          videoIds: selectedVideosOrdered.map((v) => v.id),
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data?.error || "Failed to create event");
+        return;
+      }
+      const event = await res.json();
+      setCreateEventModalOpen(false);
+      setSelectedVideoIds(new Set());
+      router.push(`/dashboard/events/${event.id}`);
+      router.refresh();
+    } finally {
+      setCreateEventLoading(false);
+    }
+  }
+
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-slate-800">Video Library</h1>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          {selectedCount > 0 && (
+            <>
+              <span className="text-sm text-slate-600">
+                {selectedCount} selected
+              </span>
+              <button
+                onClick={openCreateEventModal}
+                className="rounded bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+              >
+                Create Event from Selection
+              </button>
+              <button
+                onClick={() => setSelectedVideoIds(new Set())}
+                className="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50"
+              >
+                Clear
+              </button>
+            </>
+          )}
           <a
             href={`/api/export/videos?${new URLSearchParams({
               ...(q && { q }),
@@ -335,6 +423,16 @@ export default function VideosPage() {
             <table className="min-w-full divide-y divide-slate-200">
               <thead>
                 <tr>
+                  <th className="w-10 px-2 py-2">
+                    <input
+                      type="checkbox"
+                      checked={
+                        videos.length > 0 && selectedCount === videos.length
+                      }
+                      onChange={toggleSelectAllOnPage}
+                      className="rounded"
+                    />
+                  </th>
                   <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">
                     Title
                   </th>
@@ -364,6 +462,15 @@ export default function VideosPage() {
               <tbody>
                 {videos.map((v) => (
                   <tr key={v.id} className="border-t border-slate-100 hover:bg-slate-50">
+                    <td className="w-10 px-2 py-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedVideoIds.has(v.id)}
+                        onChange={() => toggleVideoSelection(v.id)}
+                        className="rounded"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </td>
                     <td className="px-4 py-2">
                       <Link
                         href={`/dashboard/videos/${v.id}/edit`}
@@ -427,6 +534,78 @@ export default function VideosPage() {
             </div>
           )}
         </>
+      )}
+
+      {createEventModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          onClick={() => !createEventLoading && setCreateEventModalOpen(false)}
+        >
+          <form
+            onSubmit={handleCreateEvent}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg"
+          >
+            <h2 className="mb-4 text-lg font-semibold text-slate-800">
+              Create Event from Selection
+            </h2>
+            <p className="mb-4 text-sm text-slate-600">
+              {selectedCount} video(s) will be added to the event.
+            </p>
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1 block text-sm font-medium">
+                  Event name *
+                </label>
+                <input
+                  type="text"
+                  value={createEventName}
+                  onChange={(e) => setCreateEventName(e.target.value)}
+                  required
+                  className="w-full rounded border border-slate-300 px-3 py-2"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium">
+                  Event date *
+                </label>
+                <input
+                  type="date"
+                  value={createEventDate}
+                  onChange={(e) => setCreateEventDate(e.target.value)}
+                  className="w-full rounded border border-slate-300 px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium">Notes</label>
+                <textarea
+                  value={createEventNotes}
+                  onChange={(e) => setCreateEventNotes(e.target.value)}
+                  rows={2}
+                  className="w-full rounded border border-slate-300 px-3 py-2"
+                />
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setCreateEventModalOpen(false)}
+                disabled={createEventLoading}
+                className="rounded border border-slate-300 px-4 py-2 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={createEventLoading}
+                className="rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700 disabled:opacity-50"
+              >
+                {createEventLoading ? "Creating..." : "Create Event"}
+              </button>
+            </div>
+          </form>
+        </div>
       )}
     </div>
   );

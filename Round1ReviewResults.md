@@ -91,6 +91,8 @@ Event screen must still support:
 - Advanced filters do not need duplication in Event screen.
 - Event editing fully supported after creation.
 
+**Implemented** (see Round1ReviewResultsPlan.md)
+
 ---
 
 ## 4. Enable Editing Existing Events
@@ -108,6 +110,8 @@ Events cannot be fully edited after creation.
 
 ### Acceptance Criteria
 - Event editing behaves identically to event creation.
+
+**Implemented** (see Round1ReviewResultsPlan.md)
 
 ---
 
