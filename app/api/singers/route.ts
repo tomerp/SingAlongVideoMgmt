@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { sortByHebrew } from "@/lib/hebrew-sort";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -8,16 +9,15 @@ export async function GET(request: NextRequest) {
   if (q) {
     const singers = await prisma.singer.findMany({
       where: { name: { contains: q, mode: "insensitive" } },
-      orderBy: { name: "asc" },
       take: 20,
     });
-    return NextResponse.json(singers);
+    const sorted = sortByHebrew(singers, (s) => s.name);
+    return NextResponse.json(sorted);
   }
 
-  const singers = await prisma.singer.findMany({
-    orderBy: { name: "asc" },
-  });
-  return NextResponse.json(singers);
+  const singers = await prisma.singer.findMany();
+  const sorted = sortByHebrew(singers, (s) => s.name);
+  return NextResponse.json(sorted);
 }
 
 export async function POST(request: NextRequest) {

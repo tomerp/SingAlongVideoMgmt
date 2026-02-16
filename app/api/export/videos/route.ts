@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { exportVideosToExcel } from "@/lib/excel-export";
+import { sortByHebrew } from "@/lib/hebrew-sort";
 import type { Prisma } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
@@ -41,7 +42,6 @@ export async function GET(request: NextRequest) {
   const videos = await prisma.video.findMany({
     where,
     take: limit,
-    orderBy: { title: "asc" },
     include: {
       genre: true,
       singers: { include: { singer: true } },
@@ -50,7 +50,8 @@ export async function GET(request: NextRequest) {
     },
   });
 
-  const buffer = await exportVideosToExcel(videos);
+  const sortedVideos = sortByHebrew(videos, (v) => v.title);
+  const buffer = await exportVideosToExcel(sortedVideos);
   return new NextResponse(new Uint8Array(buffer), {
     headers: {
       "Content-Type":

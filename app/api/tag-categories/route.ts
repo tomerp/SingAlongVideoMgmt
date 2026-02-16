@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { sortByHebrew } from "@/lib/hebrew-sort";
 
 export async function GET() {
   const categories = await prisma.tagCategory.findMany({
-    orderBy: { name: "asc" },
-    include: {
-      tags: { orderBy: { name: "asc" } },
-    },
+    include: { tags: true },
   });
-  return NextResponse.json(categories);
+  const sortedCategories = sortByHebrew(categories, (c) => c.name);
+  const result = sortedCategories.map((c) => ({
+    ...c,
+    tags: sortByHebrew(c.tags, (t) => t.name),
+  }));
+  return NextResponse.json(result);
 }
 
 export async function POST(request: NextRequest) {

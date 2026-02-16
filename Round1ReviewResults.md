@@ -176,16 +176,18 @@ View count is not currently stored or displayed.
 
 ---
 
-## 8. Sorting Enhancements
+## 8. Sorting Enhancements ✅
 
 ### Required Behavior
-- Add sorting by Singer.
-- Ensure Hebrew-aware, case-insensitive sorting everywhere.
-- Alphabetical ordering for:
+- ✅ Add sorting by Singer (videos: "Singer A-Z" and "Singer Z-A" options, client-side Hebrew sort).
+- ✅ Ensure Hebrew-aware, case-insensitive sorting everywhere.
+- ✅ Alphabetical ordering for:
   - Tags within categories
   - Holidays
   - Singers
   - Genres
+
+**Implemented** – Genres, singers, holidays, tag-categories APIs apply `sortByHebrew`; tags within each category sorted. Videos list has Singer sort (client-side). Excel export uses Hebrew sort by title. Uses `Intl.Collator("he", { sensitivity: "base" })` for case-insensitive Hebrew ordering.
 
 ---
 

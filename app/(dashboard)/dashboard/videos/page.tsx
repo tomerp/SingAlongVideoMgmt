@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { sortByHebrew } from "@/lib/hebrew-sort";
+import { sortByHebrew, sortHebrew } from "@/lib/hebrew-sort";
 
 interface Singer {
   singer: { id: string; name: string };
@@ -92,6 +92,15 @@ export default function VideosPage() {
     let vids: Video[] = data.videos || [];
     if (sort === "title" && vids.length) {
       vids = sortByHebrew(vids, (v: Video) => v.title);
+      if (order === "desc") vids = vids.reverse();
+    } else if (sort === "singer" && vids.length) {
+      const getSingerKey = (v: Video) => {
+        const names = v.singers?.map((s) => s.singer?.name).filter(Boolean) ?? [];
+        if (!names.length) return "\uFFFF";
+        const sorted = [...names].sort((a, b) => sortHebrew(a, b));
+        return sorted[0];
+      };
+      vids = sortByHebrew(vids, getSingerKey);
       if (order === "desc") vids = vids.reverse();
     }
     setVideos(vids);
@@ -286,6 +295,8 @@ export default function VideosPage() {
         >
           <option value="title-asc">Title A-Z (Hebrew-aware)</option>
           <option value="title-desc">Title Z-A (Hebrew-aware)</option>
+          <option value="singer-asc">Singer A-Z (Hebrew-aware)</option>
+          <option value="singer-desc">Singer Z-A (Hebrew-aware)</option>
           <option value="viewCount-desc">Most Viewed</option>
           <option value="usedCount-desc">Most Used</option>
           <option value="lastUsedDate-desc">Recently Used</option>
