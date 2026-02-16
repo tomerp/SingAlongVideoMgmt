@@ -376,3 +376,113 @@ Per "Advanced filters do not need duplication in Event screen":
 - **Empty selection:** Button disabled or hidden when no videos selected.
 - **Pagination:** Selection is page-local. User filters to narrow results if needed.
 - **Order:** Use table display order for initial event setlist.
+
+---
+
+---
+
+# Implementation Plan: Item 5 – Show Associated Events in Video Detail
+
+*Source: Round1ReviewResults.md, P0 Item 5*
+
+---
+
+## Problem Summary
+
+From the Video detail (Edit Video) screen, the user cannot see which events have used this video. There is no visibility into event associations.
+
+---
+
+## Current State
+
+| Location | Behavior |
+|----------|----------|
+| **Edit Video page** (`dashboard/videos/[id]/edit/page.tsx`) | Fetches video with genre, singers, holidays, tags. Renders VideoForm. No event data. |
+| **Video model** | Has `eventVideos EventVideo[]` relation. EventVideo links videoId to eventId. |
+| **Event model** | Has id, name, eventDate, notes. |
+
+---
+
+## Required Behavior
+
+- Display list of associated Events (events that include this video).
+- Support multiple events.
+- Clickable links to navigate to Event.
+
+**Acceptance Criteria:**
+- Video screen shows all linked events.
+- List updates automatically after event changes.
+
+---
+
+## Implementation Plan
+
+### 1. Include Event Data in Video Fetch
+
+**File:** `app/(dashboard)/dashboard/videos/[id]/edit/page.tsx`
+
+Add to the Prisma `include`:
+
+```ts
+eventVideos: {
+  include: {
+    event: true
+  }
+}
+```
+
+This returns `video.eventVideos` with each entry having `event: { id, name, eventDate, ... }`.
+
+---
+
+### 2. Display "Used in Events" Section
+
+**File:** `app/(dashboard)/dashboard/videos/[id]/edit/page.tsx`
+
+- After fetching the video, extract events: `video.eventVideos.map(ev => ev.event)`.
+- Deduplicate by event id (a video could theoretically appear multiple times in one event – but schema has @@id([eventId, videoId]) so at most once per event).
+- Render a new section above or below the VideoForm:
+  - Heading: "Used in Events" (or "Associated Events")
+  - When `events.length === 0`: "This video is not used in any events."
+  - When `events.length > 0`: List of events, each as a link to `/dashboard/events/[eventId]`, with event name and date.
+
+**Layout:** Place the section between the page title and the VideoForm, or after the form. Recommendation: after the form, so the primary edit flow is first.
+
+---
+
+### 3. Create Flow – No Events Section
+
+The create video page (`/dashboard/videos/new`) uses VideoForm without a video. No events section needed (new videos have no event associations).
+
+---
+
+### 4. "List Updates Automatically After Event Changes"
+
+- The edit page is a server component. Each navigation or `router.refresh()` triggers a fresh fetch.
+- When the user adds/removes this video from an event (on the Event edit page), the next visit to the Video edit page will show the updated list.
+- After saving the VideoForm, we already call `router.refresh()` – the events list will be refetched.
+- No client-side polling or real-time updates required for "automatically" – standard server refresh behavior satisfies the criterion.
+
+---
+
+## File Change Summary
+
+| File | Changes |
+|------|---------|
+| `app/(dashboard)/dashboard/videos/[id]/edit/page.tsx` | Add `eventVideos: { include: { event: true } }` to video query; add "Used in Events" section with list of events and links to `/dashboard/events/[id]`. |
+
+---
+
+## Acceptance Criteria Checklist
+
+- [ ] Video edit screen shows all events that include this video.
+- [ ] Each event is a clickable link to the event page.
+- [ ] Multiple events are supported.
+- [ ] List reflects current state after navigation/refresh (updates after event changes).
+
+---
+
+## Edge Cases
+
+- **No events:** Show "This video is not used in any events."
+- **Many events:** List can scroll or wrap; consider max-height if list is long.

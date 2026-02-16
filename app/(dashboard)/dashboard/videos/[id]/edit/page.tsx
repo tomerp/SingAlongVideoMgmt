@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { VideoForm } from "@/components/VideoForm";
 
@@ -15,9 +16,12 @@ export default async function EditVideoPage({
       singers: { include: { singer: true } },
       holidays: { include: { holiday: true } },
       tags: { include: { tag: { include: { tagCategory: true } } } },
+      eventVideos: { include: { event: true } },
     },
   });
   if (!video) notFound();
+
+  const associatedEvents = video.eventVideos.map((ev) => ev.event);
 
   const formVideo = {
     ...video,
@@ -35,6 +39,33 @@ export default async function EditVideoPage({
         Edit Video
       </h1>
       <VideoForm video={formVideo} />
+
+      <section className="mt-8 rounded-lg border border-slate-200 p-4">
+        <h2 className="mb-2 text-sm font-semibold text-slate-800">
+          Used in Events
+        </h2>
+        {associatedEvents.length === 0 ? (
+          <p className="text-sm text-slate-500">
+            This video is not used in any events.
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {associatedEvents.map((event) => (
+              <li key={event.id}>
+                <Link
+                  href={`/dashboard/events/${event.id}`}
+                  className="text-blue-600 hover:underline"
+                >
+                  {event.name}
+                </Link>
+                <span className="ml-2 text-sm text-slate-500">
+                  {new Date(event.eventDate).toLocaleDateString()}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

@@ -130,6 +130,8 @@ From Video detail screen, user cannot see:
 - Video screen shows all linked events.
 - List updates automatically after event changes.
 
+**Implemented** (see Round1ReviewResultsPlan.md)
+
 ---
 
 ## 6. Tag Categories and Tags Must Be Editable
