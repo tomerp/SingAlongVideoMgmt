@@ -21,7 +21,10 @@ export default async function EditVideoPage({
 
   const formVideo = {
     ...video,
-    singers: video.singers.map((s) => ({ singerId: s.singerId })),
+    singers: video.singers.map((s) => ({
+      singerId: s.singerId,
+      singer: s.singer ? { id: s.singer.id, name: s.singer.name } : undefined,
+    })),
     holidays: video.holidays.map((h) => ({ holidayId: h.holidayId })),
     tags: video.tags.map((t) => ({ tagId: t.tagId })),
   };

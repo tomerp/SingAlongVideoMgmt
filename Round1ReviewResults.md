@@ -64,6 +64,8 @@ Replace rigid checkbox selection with:
 - New names auto-create entries.
 - Duplicate prevention remains intact.
 
+**Implemented** (see Round1ReviewResultsPlan.md)
+
 ---
 
 ## 3. Improve Event Creation Workflow

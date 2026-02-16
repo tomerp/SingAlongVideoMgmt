@@ -1,7 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const q = searchParams.get("q")?.trim();
+
+  if (q) {
+    const singers = await prisma.singer.findMany({
+      where: { name: { contains: q, mode: "insensitive" } },
+      orderBy: { name: "asc" },
+      take: 20,
+    });
+    return NextResponse.json(singers);
+  }
+
   const singers = await prisma.singer.findMany({
     orderBy: { name: "asc" },
   });

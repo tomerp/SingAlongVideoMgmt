@@ -2,13 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { SingerAutocomplete } from "./SingerAutocomplete";
 
 interface Genre {
-  id: string;
-  name: string;
-}
-
-interface Singer {
   id: string;
   name: string;
 }
@@ -47,7 +43,7 @@ interface VideoFormProps {
     copyright?: boolean;
     notes?: string | null;
     active?: boolean;
-    singers?: { singerId: string }[];
+    singers?: { singerId: string; singer?: { id: string; name: string } }[];
     holidays?: { holidayId: string }[];
     tags?: { tagId: string }[];
   };
@@ -58,7 +54,6 @@ export function VideoForm({ video }: VideoFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [genres, setGenres] = useState<Genre[]>([]);
-  const [singers, setSingers] = useState<Singer[]>([]);
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [tagCategories, setTagCategories] = useState<TagCategory[]>([]);
 
@@ -90,7 +85,6 @@ export function VideoForm({ video }: VideoFormProps) {
 
   useEffect(() => {
     fetch("/api/genres").then((r) => r.json()).then(setGenres);
-    fetch("/api/singers").then((r) => r.json()).then(setSingers);
     fetch("/api/holidays").then((r) => r.json()).then(setHolidays);
     fetch("/api/tag-categories").then((r) => r.json()).then(setTagCategories);
   }, []);
@@ -349,18 +343,13 @@ export function VideoForm({ video }: VideoFormProps) {
       </div>
       <div>
         <label className="mb-1 block text-sm font-medium">Singers</label>
-        <div className="flex flex-wrap gap-2">
-          {singers.map((s) => (
-            <label key={s.id} className="flex items-center gap-1">
-              <input
-                type="checkbox"
-                checked={singerIds.includes(s.id)}
-                onChange={() => toggleMulti(s.id, singerIds, setSingerIds)}
-              />
-              <span className="text-sm">{s.name}</span>
-            </label>
-          ))}
-        </div>
+        <SingerAutocomplete
+          value={singerIds}
+          onChange={setSingerIds}
+          initialSingers={video?.singers
+            ?.filter((s) => s.singer)
+            .map((s) => ({ id: s.singerId, name: s.singer!.name })) ?? []}
+        />
       </div>
       <div>
         <label className="mb-1 block text-sm font-medium">Holidays</label>
