@@ -158,16 +158,17 @@ Currently tags and categories can only be deleted and re-created.
 ### Problem
 View count is not currently stored or displayed.
 
-**Implemented** – Schema stores `viewCount`, `likeCount`, `commentCount`; mock fixtures and real YouTube sync populate all three; videos table shows Views column with formatted counts (e.g. 1.2M); "Most Viewed" sort works via API.
-
 ### Required Behavior
-- Store view count during YouTube sync.
-- Display in Video table.
-- Enable sorting by View Count.
+- ✅ Store view count during YouTube sync.
+- ✅ Display in Video table.
+- ✅ Enable sorting by View Count.
 
 ### Acceptance Criteria
-- View count visible in UI.
-- Sorting by “Most Viewed” works correctly.
+- ✅ View count visible in UI (list table + edit page "Data from YouTube" section).
+- ✅ Sorting by “Most Viewed” works correctly.
+
+
+**Implemented** – Schema stores `viewCount`, `likeCount`, `commentCount`; mock fixtures and real YouTube sync populate all three. Videos list shows Views column (formatted e.g. 1.2M). Edit page shows Views, Likes, Comments, Publish Date in YouTube section. "Most Viewed" sort works via API.
 
 ---
 
