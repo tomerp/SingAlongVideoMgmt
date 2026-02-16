@@ -149,6 +149,8 @@ Currently tags and categories can only be deleted and re-created.
 - Editing tag names updates all references.
 - No data corruption occurs.
 
+**Implemented** (see Round1ReviewResultsPlan.md)
+
 ---
 
 ## 7. Add View Count from YouTube Sync

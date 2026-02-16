@@ -486,3 +486,105 @@ The create video page (`/dashboard/videos/new`) uses VideoForm without a video. 
 
 - **No events:** Show "This video is not used in any events."
 - **Many events:** List can scroll or wrap; consider max-height if list is long.
+
+---
+
+---
+
+# Implementation Plan: Item 6 – Tag Categories and Tags Must Be Editable
+
+*Source: Round1ReviewResults.md, P0 Item 6*
+
+---
+
+## Problem Summary
+
+Users report that tags and tag categories can only be deleted and re-created. They need the ability to edit names in place.
+
+---
+
+## Current State
+
+| Component | Behavior |
+|----------|----------|
+| **Setup page TagsTab** | Tag Categories: Add, no Edit. Tags: Add, Delete, no Edit. |
+| **Tag Category API** (`/api/tag-categories/[id]`) | PATCH and DELETE already exist. PATCH updates `name`. |
+| **Tag API** (`/api/tags/[id]`) | PATCH and DELETE already exist. PATCH updates `name`. |
+| **Data model** | VideoTag links videoId ↔ tagId (ID-based). Tag links tagCategoryId (ID-based). Renaming does not affect relationships. |
+
+**Conclusion:** The backend already supports editing. The UI (Setup page TagsTab) does not expose Edit for categories or tags.
+
+---
+
+## Required Behavior
+
+- Allow editing Tag Category name.
+- Allow editing Tag name.
+- Changes must propagate to all linked videos (automatic – IDs unchanged).
+- Maintain referential integrity (ID-based linking – no schema change).
+
+---
+
+## Implementation Plan
+
+### 1. Add Edit for Tag Category Name
+
+**File:** `app/(dashboard)/dashboard/setup/page.tsx`
+
+**TagsTab component – Tag Categories section:**
+
+- Add state: `editingCategoryId: string | null`, `editCategoryValue: string`.
+- For each category, show either:
+  - **Display mode:** Category name + Edit button + (optional) Delete if desired.
+  - **Edit mode:** Input with current name, Save, Cancel.
+- On Save: `PATCH /api/tag-categories/[id]` with `{ name }`.
+- On success: clear edit state, call `fetchCategories()`.
+
+Pattern matches `CrudList` used for Genres/Singers/Holidays.
+
+---
+
+### 2. Add Edit for Tag Name
+
+**File:** `app/(dashboard)/dashboard/setup/page.tsx`
+
+**TagsTab component – per-category tag list:**
+
+- Add state: `editingTagId: string | null`, `editTagValue: string`.
+- For each tag, show either:
+  - **Display mode:** Tag name + Edit button + Delete button (existing).
+  - **Edit mode:** Input with current name, Save, Cancel.
+- On Save: `PATCH /api/tags/[id]` with `{ name }`.
+- On success: clear edit state, call `fetchCategories()`.
+
+---
+
+### 3. Propagation and Referential Integrity
+
+- Videos link to tags via `VideoTag(videoId, tagId)`. No names stored.
+- Tags link to categories via `tagCategoryId`. No names stored.
+- Updating `Tag.name` or `TagCategory.name` only changes the name; all existing relations automatically use the new name when loaded. No migration or extra logic needed.
+
+---
+
+## File Change Summary
+
+| File | Changes |
+|------|---------|
+| `app/(dashboard)/dashboard/setup/page.tsx` | TagsTab: Add Edit UI for category names; Add Edit UI for tag names. Call existing PATCH endpoints. |
+
+---
+
+## Acceptance Criteria Checklist
+
+- [ ] User can edit Tag Category name in Setup → Tags.
+- [ ] User can edit Tag name in Setup → Tags.
+- [ ] Editing updates the stored name; all references (videos, filters, etc.) show the new name.
+- [ ] No data corruption; ID-based relations unchanged.
+
+---
+
+## Edge Cases
+
+- **Duplicate name:** Tag/TagCategory have unique constraints. PATCH returns 409 if new name conflicts; show error to user.
+- **Empty name:** Validate before PATCH; don't allow blank.

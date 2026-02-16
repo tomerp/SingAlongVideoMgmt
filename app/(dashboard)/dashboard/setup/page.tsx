@@ -379,6 +379,10 @@ function TagsTab({
   const [newTagByCat, setNewTagByCat] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [editCategoryValue, setEditCategoryValue] = useState("");
+  const [editingTagId, setEditingTagId] = useState<string | null>(null);
+  const [editTagValue, setEditTagValue] = useState("");
 
   async function handleAddCategory(e: React.FormEvent) {
     e.preventDefault();
@@ -440,6 +444,52 @@ function TagsTab({
     }
   }
 
+  async function handleUpdateCategory(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingCategoryId || !editCategoryValue.trim()) return;
+    setError("");
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/tag-categories/${editingCategoryId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editCategoryValue.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw data;
+      setEditingCategoryId(null);
+      setEditCategoryValue("");
+      await fetchCategories();
+    } catch (err: unknown) {
+      setError((err as { error?: string })?.error || "Failed to update");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleUpdateTag(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingTagId || !editTagValue.trim()) return;
+    setError("");
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/tags/${editingTagId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editTagValue.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw data;
+      setEditingTagId(null);
+      setEditTagValue("");
+      await fetchCategories();
+    } catch (err: unknown) {
+      setError((err as { error?: string })?.error || "Failed to update");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="rounded border border-slate-200 bg-white p-4">
@@ -468,7 +518,53 @@ function TagsTab({
           key={cat.id}
           className="rounded border border-slate-200 bg-white p-4"
         >
-          <h3 className="mb-3 font-semibold text-slate-800">{cat.name}</h3>
+          {editingCategoryId === cat.id ? (
+            <form
+              onSubmit={handleUpdateCategory}
+              className="mb-3 flex items-center gap-2"
+            >
+              <input
+                type="text"
+                value={editCategoryValue}
+                onChange={(e) => setEditCategoryValue(e.target.value)}
+                className="flex-1 rounded border border-slate-300 px-2 py-1 text-sm"
+                autoFocus
+                disabled={loading}
+              />
+              <button
+                type="submit"
+                disabled={loading}
+                className="text-sm text-blue-600 hover:underline"
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingCategoryId(null);
+                  setEditCategoryValue("");
+                }}
+                className="text-sm text-slate-500 hover:underline"
+              >
+                Cancel
+              </button>
+            </form>
+          ) : (
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="font-semibold text-slate-800">{cat.name}</h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingCategoryId(cat.id);
+                  setEditCategoryValue(cat.name);
+                }}
+                className="text-sm text-blue-600 hover:underline disabled:opacity-50"
+                disabled={loading}
+              >
+                Edit
+              </button>
+            </div>
+          )}
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -500,15 +596,63 @@ function TagsTab({
                 key={tag.id}
                 className="flex items-center justify-between rounded bg-slate-50 px-2 py-1"
               >
-                <span className="text-sm text-slate-800">{tag.name}</span>
-                <button
-                  type="button"
-                  onClick={() => handleDeleteTag(tag.id)}
-                  className="text-sm text-red-600 hover:underline disabled:opacity-50"
-                  disabled={loading}
-                >
-                  Delete
-                </button>
+                {editingTagId === tag.id ? (
+                  <form
+                    onSubmit={handleUpdateTag}
+                    className="flex flex-1 gap-2"
+                  >
+                    <input
+                      type="text"
+                      value={editTagValue}
+                      onChange={(e) => setEditTagValue(e.target.value)}
+                      className="flex-1 rounded border border-slate-300 px-2 py-0.5 text-sm"
+                      autoFocus
+                      disabled={loading}
+                    />
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="text-sm text-blue-600 hover:underline"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingTagId(null);
+                        setEditTagValue("");
+                      }}
+                      className="text-sm text-slate-500 hover:underline"
+                    >
+                      Cancel
+                    </button>
+                  </form>
+                ) : (
+                  <>
+                    <span className="text-sm text-slate-800">{tag.name}</span>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingTagId(tag.id);
+                          setEditTagValue(tag.name);
+                        }}
+                        className="text-sm text-blue-600 hover:underline disabled:opacity-50"
+                        disabled={loading}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteTag(tag.id)}
+                        className="text-sm text-red-600 hover:underline disabled:opacity-50"
+                        disabled={loading}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </>
+                )}
               </li>
             ))}
           </ul>
