@@ -1,0 +1,181 @@
+// SingAlong Video Management System - Database Schema
+// PRD v2.2
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SourceType {
+  YOUTUBE
+  MANUAL
+}
+
+enum PlaylistType {
+  YOUTUBE
+  LOCAL
+}
+
+// Auth - simple single-user
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Genre {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  videos    Video[]
+}
+
+model Singer {
+  id        String       @id @default(cuid())
+  name      String       @unique
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  videos    VideoSinger[]
+}
+
+model Holiday {
+  id        String       @id @default(cuid())
+  name      String       @unique
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  videos    VideoHoliday[]
+}
+
+model TagCategory {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tags     Tag[]
+}
+
+model Tag {
+  id           String    @id @default(cuid())
+  name         String
+  tagCategoryId String
+  tagCategory  TagCategory @relation(fields: [tagCategoryId], references: [id], onDelete: Cascade)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  videos       VideoTag[]
+
+  @@unique([name, tagCategoryId])
+}
+
+model Video {
+  id               String    @id @default(cuid())
+  title            String
+  description      String?   @db.Text
+  descriptionPreview String? @db.VarChar(150)
+  duration         Int?     // seconds
+  publishDate      DateTime?
+  viewCount        Int      @default(0)
+  url              String?
+  sourceType       SourceType
+  youtubeVideoId   String?  @unique
+  filePath         String?
+  language         String?
+  tempo            String?
+  qualityScore     Int?     // 1-10
+  genreId          String
+  genre            Genre    @relation(fields: [genreId], references: [id], onDelete: Restrict)
+  copyright        Boolean  @default(false)
+  notes            String?  @db.Text
+  active           Boolean  @default(true)
+  usedCount        Int      @default(0)
+  lastUsedDate     DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  singers    VideoSinger[]
+  holidays   VideoHoliday[]
+  tags       VideoTag[]
+  playlistVideos PlaylistVideo[]
+  eventVideos    EventVideo[]
+}
+
+model VideoSinger {
+  videoId   String
+  singerId  String
+  video     Video  @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  singer    Singer @relation(fields: [singerId], references: [id], onDelete: Cascade)
+
+  @@id([videoId, singerId])
+}
+
+model VideoHoliday {
+  videoId   String
+  holidayId String
+  video     Video   @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  holiday   Holiday @relation(fields: [holidayId], references: [id], onDelete: Cascade)
+
+  @@id([videoId, holidayId])
+}
+
+model VideoTag {
+  videoId String
+  tagId   String
+  video   Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  tag    Tag   @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([videoId, tagId])
+}
+
+model YouTubeChannel {
+  id             String   @id @default(cuid())
+  youtubeChannelId String @unique
+  name           String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Playlist {
+  id                String       @id @default(cuid())
+  name              String
+  type              PlaylistType
+  youtubePlaylistId String?      @unique
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  videos            PlaylistVideo[]
+}
+
+model PlaylistVideo {
+  playlistId String
+  videoId    String
+  order      Int      @default(0)
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  video      Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@id([playlistId, videoId])
+}
+
+model Event {
+  id          String       @id @default(cuid())
+  name        String
+  eventDate   DateTime
+  notes       String?      @db.Text
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  eventVideos EventVideo[]
+}
+
+model EventVideo {
+  eventId   String
+  videoId  String
+  order    Int      @default(0)
+  event    Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  video    Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, videoId])
+}

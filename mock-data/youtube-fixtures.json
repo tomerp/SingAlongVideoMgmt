@@ -1,0 +1,183 @@
+{
+  "channels": [
+    {
+      "id": "mock-channel-1",
+      "name": "SingAlong Hebrew Hits",
+      "description": "Mock channel for Hebrew singalong videos"
+    },
+    {
+      "id": "mock-channel-2",
+      "name": "Oldies & Classics",
+      "description": "Mock channel for oldies and classic songs"
+    }
+  ],
+  "playlists": [
+    {
+      "id": "mock-playlist-1",
+      "channelId": "mock-channel-1",
+      "name": "חגיגת שירה עברית",
+      "videoIds": ["mock-vid-1", "mock-vid-2", "mock-vid-3"]
+    },
+    {
+      "id": "mock-playlist-2",
+      "channelId": "mock-channel-1",
+      "name": "שירי אהבה",
+      "videoIds": ["mock-vid-2", "mock-vid-4"]
+    },
+    {
+      "id": "mock-playlist-3",
+      "channelId": "mock-channel-2",
+      "name": "Oldies Gold",
+      "videoIds": ["mock-vid-5", "mock-vid-6", "mock-vid-7"]
+    },
+    {
+      "id": "mock-playlist-4",
+      "channelId": "mock-channel-2",
+      "name": "Comedy Covers",
+      "videoIds": ["mock-vid-8", "mock-vid-9"]
+    },
+    {
+      "id": "mock-playlist-5",
+      "channelId": "mock-channel-1",
+      "name": "מזרחית",
+      "videoIds": ["mock-vid-10", "mock-vid-11"]
+    }
+  ],
+  "videos": [
+    {
+      "id": "mock-vid-1",
+      "title": "ירושלים של זהב - שולי נתן",
+      "description": "Classic Israeli song from 1967. Full version with lyrics.",
+      "duration": 198,
+      "publishDate": "2020-03-15",
+      "viewCount": 1250000,
+      "url": "https://www.youtube.com/watch?v=mock-vid-1"
+    },
+    {
+      "id": "mock-vid-2",
+      "title": "עוד מעט נאהב - דודו פישר",
+      "description": "Popular Hebrew love song from the 80s.",
+      "duration": 225,
+      "publishDate": "2019-08-22",
+      "viewCount": 890000,
+      "url": "https://www.youtube.com/watch?v=mock-vid-2"
+    },
+    {
+      "id": "mock-vid-3",
+      "title": "הללויה - נעמי שמר",
+      "description": "Beautiful Hebrew classic performed by Naomi Shemer and Tomer Petel.",
+      "duration": 185,
+      "publishDate": "2021-01-10",
+      "viewCount": 456000,
+      "url": "https://www.youtube.com/watch?v=mock-vid-3"
+    },
+    {
+      "id": "mock-vid-4",
+      "title": "שיר לאוהבים - עירית ענבר",
+      "description": "Romantic Hebrew ballad.",
+      "duration": 210,
+      "publishDate": "2020-11-05",
+      "viewCount": 234000,
+      "url": "https://www.youtube.com/watch?v=mock-vid-4"
+    },
+    {
+      "id": "mock-vid-5",
+      "title": "Imagine - John Lennon (Karaoke)",
+      "description": "Classic peace anthem. Instrumental karaoke version.",
+      "duration": 195,
+      "publishDate": "2018-06-20",
+      "viewCount": 2100000,
+      "url": "https://www.youtube.com/watch?v=mock-vid-5"
+    },
+    {
+      "id": "mock-vid-6",
+      "title": "Let It Be - The Beatles (Sing Along)",
+      "description": "Legendary Beatles song with on-screen lyrics.",
+      "duration": 243,
+      "publishDate": "2019-04-12",
+      "viewCount": 1890000,
+      "url": "https://www.youtube.com/watch?v=mock-vid-6"
+    },
+    {
+      "id": "mock-vid-7",
+      "title": "Sweet Caroline - Neil Diamond",
+      "description": "Classic singalong favorite. Full crowd participation version.",
+      "duration": 201,
+      "publishDate": "2020-07-04",
+      "viewCount": 3200000,
+      "url": "https://www.youtube.com/watch?v=mock-vid-7"
+    },
+    {
+      "id": "mock-vid-8",
+      "title": "Bohemian Rhapsody - Comedy Cover",
+      "description": "Fun parody version of the Queen classic.",
+      "duration": 355,
+      "publishDate": "2021-05-30",
+      "viewCount": 567000,
+      "url": "https://www.youtube.com/watch?v=mock-vid-8"
+    },
+    {
+      "id": "mock-vid-9",
+      "title": "I Will Survive - Parody",
+      "description": "Comedy singalong version.",
+      "duration": 198,
+      "publishDate": "2022-02-14",
+      "viewCount": 234000,
+      "url": "https://www.youtube.com/watch?v=mock-vid-9"
+    },
+    {
+      "id": "mock-vid-10",
+      "title": "אחינו - זוהר ארגוב",
+      "description": "Classic Mizrahi hit from the legend Zohar Argov.",
+      "duration": 267,
+      "publishDate": "2019-09-01",
+      "viewCount": 890000,
+      "url": "https://www.youtube.com/watch?v=mock-vid-10"
+    },
+    {
+      "id": "mock-vid-11",
+      "title": "פלייליסט מזרחית - חתונה",
+      "description": "Traditional wedding Mizrahi songs mix.",
+      "duration": 1200,
+      "publishDate": "2020-12-20",
+      "viewCount": 123000,
+      "url": "https://www.youtube.com/watch?v=mock-vid-11"
+    },
+    {
+      "id": "mock-vid-12",
+      "title": "הורה - Israeli Folk Dance",
+      "description": "Traditional hora dance with music and lyrics.",
+      "duration": 178,
+      "publishDate": "2021-04-15",
+      "viewCount": 345000,
+      "url": "https://www.youtube.com/watch?v=mock-vid-12"
+    },
+    {
+      "id": "mock-vid-13",
+      "title": "התקווה - National Anthem",
+      "description": "Israeli national anthem with lyrics.",
+      "duration": 95,
+      "publishDate": "2018-05-14",
+      "viewCount": 567000,
+      "url": "https://www.youtube.com/watch?v=mock-vid-13"
+    },
+    {
+      "id": "mock-vid-14",
+      "title": "Don't Stop Believin' - Journey",
+      "description": "80s anthem. Karaoke with lyrics.",
+      "duration": 254,
+      "publishDate": "2019-11-11",
+      "viewCount": 1560000,
+      "url": "https://www.youtube.com/watch?v=mock-vid-14"
+    },
+    {
+      "id": "mock-vid-15",
+      "title": "לילה טוב - מתי כספי",
+      "description": "Lullaby style Hebrew song by Mati Caspi.",
+      "duration": 189,
+      "publishDate": "2020-02-28",
+      "viewCount": 189000,
+      "url": "https://www.youtube.com/watch?v=mock-vid-15"
+    }
+  ]
+}
