@@ -78,7 +78,11 @@ Works with local (Docker) and production (Cloud SQL). For production, run from a
 - `npm run db:snapshot` - Save full DB snapshot to `backups/snapshot_YYYY-MM-DDTHH-MM-SS.sql`
 - `npm run db:restore -- backups/snapshot_xxx.sql` - Restore from a snapshot (overwrites existing data)
 
-## Production (GCP)
+## Production
+
+**GCP (Cloud):** See **[DEPLOY_TO_CLOUD_AND_UPDATE.md](./DEPLOY_TO_CLOUD_AND_UPDATE.md)** for deployment to Google Cloud Platform (Cloud Run + Cloud SQL).
+
+**On-premises (Windows):** See **[DEPLOY_TO_ONPREM_MACHINE_AND_UPDATE.md](./DEPLOY_TO_ONPREM_MACHINE_AND_UPDATE.md)** to run the full solution (app + database) on a Windows laptop or desktop.
 
 ### Docker
 ```bash

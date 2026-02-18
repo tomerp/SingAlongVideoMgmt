@@ -1,0 +1,44 @@
+# On-premises deployment: database + app
+# Run from project root: docker compose -f docker-compose.onprem.yml up -d
+# Requires .env with POSTGRES_PASSWORD, AUTH_PASSWORD_HASH, AUTH_SESSION_SECRET
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: singalong
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata_onprem:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/singalong
+      AUTH_USERNAME: ${AUTH_USERNAME:-admin}
+      AUTH_PASSWORD_HASH: ${AUTH_PASSWORD_HASH}
+      AUTH_SESSION_SECRET: ${AUTH_SESSION_SECRET}
+      NODE_ENV: production
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      YOUTUBE_API_KEY: ${YOUTUBE_API_KEY:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    command: sh -c "npx prisma db push && npx prisma db seed && npm start"
+
+volumes:
+  pgdata_onprem:
