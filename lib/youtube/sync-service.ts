@@ -7,11 +7,13 @@ import {
   getMockPlaylistVideos,
 } from "./mock";
 import {
+  resolveChannelId,
   getYouTubeChannels,
   getChannelPlaylists,
   getChannelVideos,
   getPlaylistVideos,
 } from "./real";
+import { getValidOAuth2Client, getStoredConnection } from "./oauth";
 
 export type SyncSource = "mock" | "real";
 
@@ -24,10 +26,17 @@ export function getSyncSource(): SyncSource {
 
 export async function syncChannels(
   channelIds: string[],
-  defaultGenreId: string
+  defaultGenreId: string,
+  options?: { syncConnectedChannel?: boolean }
 ): Promise<{
   imported: { videos: number; playlists: number };
   channelsProcessed: number;
+  channelDetails?: {
+    name: string;
+    totalVideos: number;
+    newVideos: number;
+    reportedVideoCount?: number;
+  }[];
 }> {
   const source = getSyncSource();
   const genre = defaultGenreId
@@ -39,13 +48,66 @@ export async function syncChannels(
 
   const imported = { videos: 0, playlists: 0 };
   let channelsProcessed = 0;
+  const channelDetails: {
+    name: string;
+    totalVideos: number;
+    newVideos: number;
+    reportedVideoCount?: number;
+  }[] = [];
 
   const apiKey = process.env.YOUTUBE_API_KEY;
+  const oauthClient = await getValidOAuth2Client();
+  const oauthConn = await getStoredConnection();
 
-  for (const channelId of channelIds) {
-    let channelName: string | undefined;
+  // Build list of channels to sync
+  const channelsToSync: { channelId: string; channelName: string; useOAuth: boolean }[] = [];
+
+  if (
+    source === "real" &&
+    options?.syncConnectedChannel &&
+    oauthConn?.channelId &&
+    oauthClient
+  ) {
+    channelsToSync.push({
+      channelId: oauthConn.channelId,
+      channelName: oauthConn.channelName ?? "Your channel",
+      useOAuth: true,
+    });
+  }
+
+  for (const input of channelIds) {
+    const trimmed = input.trim();
+    if (!trimmed) continue;
+    if (source === "real" && apiKey) {
+      const resolved = await resolveChannelId(trimmed, apiKey);
+      if (!resolved) {
+        throw new Error(
+          `Could not find channel "${trimmed}". Use a channel ID (UC...) or @handle. Check it at https://www.youtube.com/account_advanced`
+        );
+      }
+      // Use OAuth if this is the connected channel
+      const isConnectedChannel = oauthConn?.channelId === resolved.channelId;
+      channelsToSync.push({
+        channelId: resolved.channelId,
+        channelName: resolved.channelName ?? resolved.channelId,
+        useOAuth: isConnectedChannel && !!oauthClient,
+      });
+    } else if (source === "mock") {
+      channelsToSync.push({
+        channelId: trimmed,
+        channelName: trimmed,
+        useOAuth: false,
+      });
+    }
+  }
+
+  for (const { channelId, channelName: name, useOAuth } of channelsToSync) {
+    let channelName: string | undefined = name;
     let videos: { id: string; title: string; description?: string; duration: number; publishDate: Date; viewCount: number; likeCount: number; commentCount: number; url: string }[];
     let playlists: { id: string; channelId: string; name: string; videoIds: string[] }[];
+    let reportedVideoCount: number | undefined;
+
+    const auth = useOAuth && oauthClient ? oauthClient : apiKey!;
 
     if (source === "mock") {
       const mockChannels = getMockChannels();
@@ -65,18 +127,23 @@ export async function syncChannels(
       }
     } else {
       if (!apiKey) continue;
-      const channels = await getYouTubeChannels([channelId], apiKey);
-      if (channels.length === 0) continue;
-      channelName = channels[0].name;
-      videos = await getChannelVideos(channelId, apiKey);
-      playlists = await getChannelPlaylists(channelId, apiKey);
+      if (!channelName) {
+        const channels = await getYouTubeChannels([channelId], auth);
+        if (channels.length === 0) continue;
+        channelName = channels[0].name;
+      }
+      const channelVideosResult = await getChannelVideos(channelId, auth);
+      videos = channelVideosResult.videos;
+      reportedVideoCount = channelVideosResult.reportedVideoCount;
+      playlists = await getChannelPlaylists(channelId, auth);
       for (const pl of playlists) {
-        const pvideos = await getPlaylistVideos(pl.id, apiKey);
+        const pvideos = await getPlaylistVideos(pl.id, auth);
         pl.videoIds = pvideos.map((v) => v.id);
       }
     }
 
     channelsProcessed++;
+    let newVideosThisChannel = 0;
 
     for (const v of videos) {
       const existing = await prisma.video.findUnique({
@@ -118,8 +185,16 @@ export async function syncChannels(
           },
         });
         imported.videos++;
+        newVideosThisChannel++;
       }
     }
+
+    channelDetails.push({
+      name: channelName ?? channelId,
+      totalVideos: videos.length,
+      newVideos: newVideosThisChannel,
+      reportedVideoCount,
+    });
 
     for (const pl of playlists) {
       const existingPl = await prisma.playlist.findUnique({
@@ -170,5 +245,5 @@ export async function syncChannels(
     });
   }
 
-  return { imported, channelsProcessed };
+  return { imported, channelsProcessed, channelDetails };
 }

@@ -140,6 +140,19 @@ model VideoTag {
   @@id([videoId, tagId])
 }
 
+// YouTube OAuth connection - stores tokens so the logged-in user can sync their own channel
+// (including unlisted videos). One connection per app instance for now.
+model YouTubeConnection {
+  id            String   @id @default(cuid())
+  accessToken   String    @db.Text
+  refreshToken  String?   @db.Text
+  expiresAt     DateTime
+  channelId     String?
+  channelName   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
 model YouTubeChannel {
   id             String   @id @default(cuid())
   youtubeChannelId String @unique
