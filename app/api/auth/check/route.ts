@@ -9,7 +9,14 @@ export async function GET() {
   const hash = process.env.AUTH_PASSWORD_HASH;
   const username = process.env.AUTH_USERNAME;
 
-  const config = {
+  const config: {
+    usernameSet: boolean;
+    usernameValue: string;
+    hashSet: boolean;
+    hashLength: number;
+    hashPrefix: string;
+    hashError?: string;
+  } = {
     usernameSet: !!username,
     usernameValue: username || "(not set)",
     hashSet: !!hash,

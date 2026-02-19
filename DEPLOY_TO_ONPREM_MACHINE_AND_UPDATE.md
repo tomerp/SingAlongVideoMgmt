@@ -69,25 +69,33 @@ You must generate `AUTH_PASSWORD_HASH` and `AUTH_SESSION_SECRET`:
 
    Copy the output and put it in `.env` as `AUTH_SESSION_SECRET=` followed by that value.
 
+**Applying `.env` changes:** If you edit `.env` after the app is already running, a plain `restart` will **not** pick up the new values. Use:
+
+```powershell
+docker compose -f docker-compose.onprem.yml up -d --force-recreate app
+```
+
 **Example `.env`:**
 
 ```env
-POSTGRES_PASSWORD=MyStr0ngDB!Pass
+POSTGRES_PASSWORD=9227521
 AUTH_USERNAME=admin
 AUTH_PASSWORD_HASH=$2a$10$abcd1234...
 AUTH_SESSION_SECRET=kX9mN2pQ...
 ```
 
-**Without Node.js:** If Node.js is not installed, generate the hash and secret using Docker. Run these from the project folder (e.g. `cd C:\SingAlongVideoMgmt`):
+**Without Node.js:** If Node.js is not installed, generate the hash and secret using Docker. Run these from the project folder (e.g. `cd C:\SingAlongVideoMgmt`).
+
+Generate the password hash using the project’s script (avoids quoting issues in PowerShell and in the container). Replace `your-admin-password` with the real password; if it contains spaces, use quotes: `"PWD_TO_HASH=your password"`.
 
 ```powershell
-docker run --rm -v "${PWD}:/app" -w /app node:20-alpine sh -c "npm install bcryptjs && node -e \"console.log(require('bcryptjs').hashSync('your-admin-password', 10))\""
+docker run --rm -v "${PWD}:/app" -w /app -e PWD_TO_HASH=your-admin-password node:20-alpine sh -c "npm install bcryptjs && node scripts/hash-password.js"
 ```
 
-(Replace `your-admin-password` with the real password.) For the session secret:
+For the session secret:
 
 ```powershell
-docker run --rm node:20-alpine node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+docker run --rm node:20-alpine node -e 'console.log(require("crypto").randomBytes(32).toString("base64"))'
 ```
 
 Alternatively, generate these on another machine with Node.js and copy the values into `.env`.
@@ -147,7 +155,11 @@ For real YouTube sync instead of mock data:
    NEXTAUTH_URL=http://localhost:3000
    ```
 
-3. Restart the app: `docker compose -f docker-compose.onprem.yml restart app`
+3. **Recreate the app** so it picks up the new env vars (a plain *restart* does not reload `.env`):
+
+   ```powershell
+   docker compose -f docker-compose.onprem.yml up -d --force-recreate app
+   ```
 
 See [YouTube-Ready-Setup.md](./YouTube-Ready-Setup.md) for details.
 
@@ -260,10 +272,10 @@ Copy the file from `backups/snapshot_*.sql` to the client's machine as `backups/
    npm run db:restore -- backups/factory-default.sql
    ```
 
-4. Restart the app so it picks up the clean DB:
+4. Recreate the app so it picks up the clean DB:
 
    ```powershell
-   docker compose -f docker-compose.onprem.yml restart app
+   docker compose -f docker-compose.onprem.yml up -d --force-recreate app
    ```
 
 ### 3.2 Method B: Drop Schema and Re-Push
@@ -364,6 +376,7 @@ Replace the container name and snapshot filename with yours.
 | First deploy | `docker compose -f docker-compose.onprem.yml up -d` |
 | Stop | `docker compose -f docker-compose.onprem.yml down` |
 | Restart app | `docker compose -f docker-compose.onprem.yml restart app` |
+| **Apply .env changes** | `docker compose -f docker-compose.onprem.yml up -d --force-recreate app` |
 | Update code | Pull/copy files → `docker compose -f docker-compose.onprem.yml down` → `build --no-cache` → `up -d` |
 | Reset DB to factory | Restore factory snapshot, or drop schema + `db:push` + `db:seed` |
 | Take snapshot | Set `DATABASE_URL` → `npm run db:snapshot` (or use Docker `pg_dump` method) |

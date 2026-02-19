@@ -1,5 +1,5 @@
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:20 AS builder
 
 WORKDIR /app
 COPY package*.json ./
@@ -7,10 +7,11 @@ COPY prisma ./prisma/
 RUN npm ci
 COPY . .
 RUN npx prisma generate
+RUN mkdir -p public
 RUN npm run build
 
 # Production stage
-FROM node:20-alpine AS runner
+FROM node:20 AS runner
 
 WORKDIR /app
 ENV NODE_ENV=production

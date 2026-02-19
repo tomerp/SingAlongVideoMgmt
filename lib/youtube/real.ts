@@ -6,7 +6,7 @@ export type YouTubeAuth = string | OAuth2Client;
 export interface YouTubeChannel {
   id: string;
   name: string;
-  description?: string;
+  description?: string | null;
 }
 
 export interface YouTubeVideo {
@@ -268,7 +268,7 @@ export async function getChannelVideos(
       videos.push({
         id: item.id!,
         title: item.snippet?.title || "",
-        description: item.snippet?.description,
+        description: item.snippet?.description ?? "",
         duration,
         publishDate,
         viewCount: parseInt(item.statistics?.viewCount || "0", 10),
@@ -320,7 +320,7 @@ export async function getPlaylistVideos(
       videos.push({
         id: item.id!,
         title: item.snippet?.title || "",
-        description: item.snippet?.description,
+        description: item.snippet?.description ?? "",
         duration,
         publishDate,
         viewCount: parseInt(item.statistics?.viewCount || "0", 10),

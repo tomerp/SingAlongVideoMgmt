@@ -32,7 +32,7 @@ export async function exportVideosToExcel(
   videos: VideoWithRelations[]
 ): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet("Videos", { headerRow: 1 });
+  const sheet = workbook.addWorksheet("Videos");
 
   sheet.columns = [
     { header: "Title", key: "title", width: 30 },
@@ -100,7 +100,7 @@ export async function exportEventSetlistToExcel(
   eventNotes?: string
 ): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet("Setlist", { headerRow: 1 });
+  const sheet = workbook.addWorksheet("Setlist");
 
   // PRD column order: Order, Title, Singers, Tempo, Quality, Duration, Event Notes, URL
   sheet.columns = [
