@@ -8,19 +8,12 @@ interface Channel {
   description?: string;
 }
 
-interface Genre {
-  id: string;
-  name: string;
-}
-
 export default function SyncPage() {
   const [channels, setChannels] = useState<Channel[]>([]);
-  const [genres, setGenres] = useState<Genre[]>([]);
   const [selectedChannelIds, setSelectedChannelIds] = useState<Set<string>>(
     new Set()
   );
   const [customChannelId, setCustomChannelId] = useState("");
-  const [defaultGenreId, setDefaultGenreId] = useState("");
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [result, setResult] = useState<{
@@ -60,13 +53,7 @@ export default function SyncPage() {
     fetch("/api/mock-youtube/channels")
       .then((r) => r.json())
       .then(setChannels);
-    fetch("/api/genres")
-      .then((r) => r.json())
-      .then((data) => {
-        setGenres(data);
-        if (data[0] && !defaultGenreId) setDefaultGenreId(data[0].id);
-      });
-  }, [defaultGenreId]);
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -138,7 +125,6 @@ export default function SyncPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           channelIds: getChannelIdsToSync(),
-          defaultGenreId: defaultGenreId || undefined,
           syncConnectedChannel: syncMyChannel,
         }),
       });
@@ -200,25 +186,6 @@ export default function SyncPage() {
           )}
         </div>
       )}
-
-      <div className="mb-6 rounded border border-slate-200 bg-white p-4">
-        <h3 className="mb-3 font-medium text-slate-800">Default genre for new videos</h3>
-        <select
-          value={defaultGenreId}
-          onChange={(e) => setDefaultGenreId(e.target.value)}
-          className="rounded border border-slate-300 px-3 py-2"
-          disabled={genres.length === 0}
-        >
-          <option value="" disabled>
-            {genres.length === 0 ? "Loading genres..." : "Select genre"}
-          </option>
-          {genres.map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.name}
-            </option>
-          ))}
-        </select>
-      </div>
 
       <div className="mb-6 rounded border border-slate-200 bg-white p-4">
         <h3 className="mb-3 font-medium text-slate-800">

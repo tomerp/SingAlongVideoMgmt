@@ -28,10 +28,42 @@ interface TagCategory {
   tags: Tag[];
 }
 
+function formatDuration(sec: number | null): string {
+  if (sec == null) return "";
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function parseDuration(mmss: string): number | null {
+  const trimmed = mmss.trim();
+  if (!trimmed) return null;
+  const parts = trimmed.split(":");
+  if (parts.length === 2) {
+    const m = parseInt(parts[0], 10);
+    const s = parseInt(parts[1], 10);
+    if (isNaN(m) || isNaN(s) || m < 0 || s < 0 || s >= 60) return null;
+    return m * 60 + s;
+  }
+  if (parts.length === 1) {
+    const n = parseInt(parts[0], 10);
+    return isNaN(n) || n < 0 ? null : n;
+  }
+  if (parts.length === 3) {
+    const h = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    const s = parseInt(parts[2], 10);
+    if (isNaN(h) || isNaN(m) || isNaN(s) || h < 0 || m < 0 || s < 0 || s >= 60) return null;
+    return h * 3600 + m * 60 + s;
+  }
+  return null;
+}
+
 interface VideoFormProps {
   video?: {
     id: string;
     sourceType?: string;
+    youtubeVideoId?: string | null;
     title: string;
     description?: string | null;
     duration?: number | null;
@@ -57,6 +89,7 @@ interface VideoFormProps {
 export function VideoForm({ video }: VideoFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [error, setError] = useState("");
   const [genres, setGenres] = useState<Genre[]>([]);
   const [holidays, setHolidays] = useState<Holiday[]>([]);
@@ -65,7 +98,7 @@ export function VideoForm({ video }: VideoFormProps) {
   const [title, setTitle] = useState(video?.title || "");
   const [description, setDescription] = useState(video?.description || "");
   const [duration, setDuration] = useState(
-    video?.duration != null ? String(video.duration) : ""
+    video?.duration != null ? formatDuration(video.duration) : ""
   );
   const [url, setUrl] = useState(video?.url || "");
   const [filePath, setFilePath] = useState(video?.filePath || "");
@@ -104,26 +137,26 @@ export function VideoForm({ video }: VideoFormProps) {
     setError("");
     setLoading(true);
     try {
-      const baseBody = {
+      const baseBody: Record<string, unknown> = {
         filePath: filePath.trim() || null,
         language: language.trim() || null,
         tempo: tempo.trim() || null,
         qualityScore: qualityScore ? parseInt(qualityScore, 10) : null,
         genreId,
-        copyright,
         notes: notes.trim() || null,
         active,
         singerIds,
         holidayIds,
         tagIds,
       };
+      if (!isFromYouTube) baseBody.copyright = copyright;
       const body = isFromYouTube
         ? baseBody
         : {
             ...baseBody,
             title: title.trim(),
             description: description.trim() || null,
-            duration: duration ? parseInt(duration, 10) : null,
+            duration: parseDuration(duration),
             url: url.trim() || null,
           };
       const url_ = video
@@ -156,6 +189,24 @@ export function VideoForm({ video }: VideoFormProps) {
   );
   const isFromYouTube = video?.sourceType === "YOUTUBE";
 
+  async function handleDelete() {
+    if (!video?.id) return;
+    if (!confirm("Delete this video? This cannot be undone.")) return;
+    setDeleteLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/videos/${video.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) throw data;
+      router.push("/dashboard/videos");
+      router.refresh();
+    } catch (err: unknown) {
+      setError((err as { error?: string })?.error || "Failed to delete");
+    } finally {
+      setDeleteLoading(false);
+    }
+  }
+
   function formatCount(n: number | undefined): string {
     if (n == null || n === 0) return "—";
     if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -178,6 +229,17 @@ export function VideoForm({ video }: VideoFormProps) {
           <p className="text-xs text-slate-500">
             Synced from YouTube. Changes will be overwritten on next sync.
           </p>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-600">
+              Video ID
+            </label>
+            <input
+              type="text"
+              value={video?.youtubeVideoId || ""}
+              readOnly
+              className={readOnlyInputClass}
+            />
+          </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-600">
               Title *
@@ -204,13 +266,13 @@ export function VideoForm({ video }: VideoFormProps) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-600">
-                Duration (seconds)
+                Duration
               </label>
               <input
-                type="number"
+                type="text"
                 value={duration}
                 readOnly
-                min={0}
+                placeholder="M:SS"
                 className={readOnlyInputClass}
               />
             </div>
@@ -256,6 +318,14 @@ export function VideoForm({ video }: VideoFormProps) {
                   : "—"}
               </p>
             </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-600">
+                Copyright
+              </label>
+              <p className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">
+                {video?.copyright ? "Yes" : "No"}
+              </p>
+            </div>
           </div>
         </section>
       ) : (
@@ -282,13 +352,13 @@ export function VideoForm({ video }: VideoFormProps) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="mb-1 block text-sm font-medium">
-                Duration (seconds)
+                Duration (M:SS)
               </label>
               <input
-                type="number"
+                type="text"
                 value={duration}
                 onChange={(e) => setDuration(e.target.value)}
-                min={0}
+                placeholder="e.g. 3:45"
                 className="w-full rounded border border-slate-300 px-3 py-2"
               />
             </div>
@@ -444,14 +514,16 @@ export function VideoForm({ video }: VideoFormProps) {
         />
       </div>
       <div className="flex gap-4">
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={copyright}
-            onChange={(e) => setCopyright(e.target.checked)}
-          />
-          <span className="text-sm">Copyright</span>
-        </label>
+        {!isFromYouTube && (
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={copyright}
+              onChange={(e) => setCopyright(e.target.checked)}
+            />
+            <span className="text-sm">Copyright</span>
+          </label>
+        )}
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -461,7 +533,7 @@ export function VideoForm({ video }: VideoFormProps) {
           <span className="text-sm">Active</span>
         </label>
       </div>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <button
           type="submit"
           disabled={loading}
@@ -476,6 +548,16 @@ export function VideoForm({ video }: VideoFormProps) {
         >
           Cancel
         </button>
+        {video && !isFromYouTube && (
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={loading || deleteLoading}
+            className="rounded border border-red-300 bg-white px-4 py-2 text-red-600 hover:bg-red-50 disabled:opacity-50"
+          >
+            {deleteLoading ? "Deleting..." : "Delete"}
+          </button>
+        )}
       </div>
       </section>
     </form>

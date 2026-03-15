@@ -16,6 +16,10 @@ export interface MockVideo {
   likeCount?: number;
   commentCount?: number;
   url: string;
+  /** From YouTube licensedContent - indicates licensed/copyrighted content */
+  copyright?: boolean;
+  /** YouTube category (e.g. "Music") - maps to Genre */
+  categoryName?: string;
 }
 
 export interface MockPlaylist {

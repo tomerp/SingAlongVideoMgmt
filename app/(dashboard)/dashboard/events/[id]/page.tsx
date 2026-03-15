@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
+import { useUnsavedChanges } from "@/components/UnsavedChangesProvider";
 
 interface EventVideo {
   videoId: string;
@@ -44,6 +44,7 @@ function formatDuration(sec: number | null): string {
 export default function EventDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const unsaved = useUnsavedChanges();
   const id = params.id as string;
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
@@ -75,6 +76,39 @@ export default function EventDetailPage() {
   useEffect(() => {
     fetchEvent().finally(() => setLoading(false));
   }, [fetchEvent]);
+
+  const hasUnsavedChanges =
+    event &&
+    (name !== event.name ||
+      eventDate !== (event.eventDate?.slice(0, 10) || "") ||
+      (notes || "") !== (event.notes || "") ||
+      JSON.stringify(eventVideos.map((ev) => ev.videoId)) !==
+        JSON.stringify((event.eventVideos || []).map((ev: EventVideo) => ev.videoId)));
+
+  useEffect(() => {
+    unsaved?.setHasUnsavedChanges(!!hasUnsavedChanges);
+    return () => {
+      unsaved?.setHasUnsavedChanges(false);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- unsaved ref changes every render; setter is stable
+  }, [hasUnsavedChanges]);
+
+  useEffect(() => {
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      if (hasUnsavedChanges) e.preventDefault();
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  function handleBackClick(e: React.MouseEvent) {
+    if (hasUnsavedChanges && !confirm("You have unsaved changes. Leave without saving?")) {
+      e.preventDefault();
+      return;
+    }
+    unsaved?.setHasUnsavedChanges(false);
+    router.push("/dashboard/events");
+  }
 
   useEffect(() => {
     if (!addSearch.trim()) {
@@ -193,9 +227,13 @@ export default function EventDetailPage() {
   return (
     <div>
       <div className="mb-4 flex items-center gap-4">
-        <Link href="/dashboard/events" className="text-blue-600 hover:underline">
+        <button
+          type="button"
+          onClick={handleBackClick}
+          className="text-blue-600 hover:underline"
+        >
           Back to events
-        </Link>
+        </button>
       </div>
 
       {usageWarning && (

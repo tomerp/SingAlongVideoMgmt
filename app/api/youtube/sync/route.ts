@@ -4,7 +4,6 @@ import { syncChannels, getSyncSource } from "@/lib/youtube/sync-service";
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({}));
   const channelIds = (body.channelIds as string[]) || [];
-  const defaultGenreId = body.defaultGenreId as string | undefined;
   const syncConnectedChannel = body.syncConnectedChannel === true;
 
   if (channelIds.length === 0 && !syncConnectedChannel) {
@@ -17,7 +16,7 @@ export async function POST(request: NextRequest) {
   const source = getSyncSource();
 
   try {
-    const result = await syncChannels(channelIds, defaultGenreId || "", {
+    const result = await syncChannels(channelIds, "", {
       syncConnectedChannel,
     });
     return NextResponse.json({

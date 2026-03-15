@@ -6,11 +6,15 @@ import type { Prisma } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const genreId = searchParams.get("genreId");
+  const genreIds = searchParams.get("genreIds")?.split(",").filter(Boolean);
   const q = searchParams.get("q");
   const language = searchParams.get("language");
   const qualityMin = searchParams.get("qualityMin");
   const qualityMax = searchParams.get("qualityMax");
+  const durationMin = searchParams.get("durationMin");
+  const durationMax = searchParams.get("durationMax");
+  const publishDateFrom = searchParams.get("publishDateFrom");
+  const publishDateTo = searchParams.get("publishDateTo");
   const active = searchParams.get("active");
   const singerIds = searchParams.get("singerIds")?.split(",").filter(Boolean);
   const holidayIds = searchParams.get("holidayIds")?.split(",").filter(Boolean);
@@ -20,7 +24,8 @@ export async function GET(request: NextRequest) {
   const where: Prisma.VideoWhereInput = {};
   const andParts: Prisma.VideoWhereInput[] = [];
 
-  if (genreId) where.genreId = genreId;
+  if (genreIds?.length)
+    where.genreId = genreIds.length === 1 ? genreIds[0] : { in: genreIds };
   if (q?.trim()) {
     where.OR = [
       { title: { contains: q.trim(), mode: "insensitive" } },
@@ -34,6 +39,14 @@ export async function GET(request: NextRequest) {
   if (qualityMin != null && qualityMin !== "") qs.gte = parseInt(qualityMin, 10);
   if (qualityMax != null && qualityMax !== "") qs.lte = parseInt(qualityMax, 10);
   if (Object.keys(qs).length) where.qualityScore = qs;
+  const dur: Prisma.IntNullableFilter = {};
+  if (durationMin != null && durationMin !== "") dur.gte = parseInt(durationMin, 10);
+  if (durationMax != null && durationMax !== "") dur.lte = parseInt(durationMax, 10);
+  if (Object.keys(dur).length) where.duration = dur;
+  const pd: Prisma.DateTimeNullableFilter = {};
+  if (publishDateFrom) pd.gte = new Date(publishDateFrom);
+  if (publishDateTo) pd.lte = new Date(publishDateTo);
+  if (Object.keys(pd).length) where.publishDate = pd;
   if (singerIds?.length) andParts.push(...singerIds.map((sid) => ({ singers: { some: { singerId: sid } } })));
   if (holidayIds?.length) andParts.push(...holidayIds.map((hid) => ({ holidays: { some: { holidayId: hid } } })));
   if (tagIds?.length) andParts.push(...tagIds.map((tid) => ({ tags: { some: { tagId: tid } } })));

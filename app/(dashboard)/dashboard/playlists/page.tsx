@@ -20,6 +20,7 @@ interface Playlist {
   name: string;
   type: string;
   youtubePlaylistId: string | null;
+  youtubeChannelName: string | null;
   videos: PlaylistVideo[];
 }
 
@@ -153,6 +154,7 @@ function PlaylistCard({
   const [expanded, setExpanded] = useState(false);
   const [videos, setVideos] = useState(playlist.videos);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     setVideos(playlist.videos);
@@ -199,17 +201,52 @@ function PlaylistCard({
     0
   );
 
+  async function handleDelete() {
+    if (!confirm("Delete this playlist? This cannot be undone.")) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/playlists/${playlist.id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) onUpdate();
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
     <div className="rounded border border-slate-200 bg-white p-4">
       <div
         className="flex cursor-pointer items-center justify-between"
         onClick={() => setExpanded(!expanded)}
       >
-        <h3 className="font-medium text-slate-800">{playlist.name}</h3>
-        <span className="text-sm text-slate-500">
-          {videos.length} videos
-          {totalDuration > 0 && ` · ${formatDuration(totalDuration)}`}
-        </span>
+        <div>
+          <h3 className="font-medium text-slate-800">{playlist.name}</h3>
+          {playlist.youtubeChannelName && (
+            <p className="text-xs text-slate-500">
+              {playlist.youtubeChannelName}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-slate-500">
+            {videos.length} videos
+            {totalDuration > 0 && ` · ${formatDuration(totalDuration)}`}
+          </span>
+          {playlist.type === "LOCAL" && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete();
+              }}
+              disabled={deleting}
+              className="rounded border border-red-200 px-2 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50"
+            >
+              {deleting ? "Deleting..." : "Delete"}
+            </button>
+          )}
+        </div>
       </div>
       {expanded && (
         <div className="mt-4">

@@ -72,7 +72,8 @@ export async function PATCH(
         ? Math.max(1, Math.min(10, parseInt(String(qualityScore), 10)))
         : null;
   if (genreId !== undefined) updateData.genreId = genreId;
-  if (copyright !== undefined) updateData.copyright = Boolean(copyright);
+  if (copyright !== undefined && !isFromYouTube)
+    updateData.copyright = Boolean(copyright);
   if (notes !== undefined) updateData.notes = notes?.trim() || null;
   if (active !== undefined) updateData.active = Boolean(active);
 
@@ -139,6 +140,19 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const video = await prisma.video.findUnique({
+    where: { id },
+    select: { sourceType: true },
+  });
+  if (!video) {
+    return NextResponse.json({ error: "Video not found" }, { status: 404 });
+  }
+  if (video.sourceType !== "MANUAL") {
+    return NextResponse.json(
+      { error: "Only manually added videos can be deleted" },
+      { status: 400 }
+    );
+  }
   try {
     await prisma.video.delete({ where: { id } });
     return NextResponse.json({ success: true });

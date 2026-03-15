@@ -222,7 +222,7 @@ docker compose -f docker-compose.onprem.yml build --no-cache
 docker compose -f docker-compose.onprem.yml up -d
 ```
 
-The `db push` and `db seed` run automatically when the app container starts (see `docker-compose.onprem.yml`). Schema changes and new seed data are applied.
+The `db push` and `db seed` run automatically when the app container starts (see `docker-compose.onprem.yml`). **Schema changes** (e.g. new columns on Video, Playlist) and new seed data are applied automatically—no extra steps needed.
 
 ### 2.3 Update (Node.js path)
 

@@ -5,7 +5,7 @@ import type { Prisma } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const genreId = searchParams.get("genreId");
+  const genreIds = searchParams.get("genreIds")?.split(",").filter(Boolean);
   const sort = searchParams.get("sort") || "title";
   const order = searchParams.get("order") || "asc";
   const page = parseInt(searchParams.get("page") || "1", 10);
@@ -32,7 +32,8 @@ export async function GET(request: NextRequest) {
   const andParts: Prisma.VideoWhereInput[] = [];
   const where: Prisma.VideoWhereInput = {};
 
-  if (genreId) where.genreId = genreId;
+  if (genreIds?.length)
+    where.genreId = genreIds.length === 1 ? genreIds[0] : { in: genreIds };
   if (q) {
     where.OR = [
       { title: { contains: q, mode: "insensitive" } },

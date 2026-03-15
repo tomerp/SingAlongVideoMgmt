@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { sortByHebrew, sortHebrew } from "@/lib/hebrew-sort";
@@ -23,6 +23,7 @@ interface Video {
   viewCount?: number;
   likeCount?: number;
   commentCount?: number;
+  youtubeChannelName?: string | null;
 }
 
 function formatDuration(sec: number | null): string {
@@ -46,7 +47,9 @@ export default function VideosPage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [q, setQ] = useState("");
-  const [genreId, setGenreId] = useState("");
+  const [genreIds, setGenreIds] = useState<string[]>([]);
+  const [genreDropdownOpen, setGenreDropdownOpen] = useState(false);
+  const genreDropdownRef = useRef<HTMLDivElement>(null);
   const [genres, setGenres] = useState<{ id: string; name: string }[]>([]);
   const [singers, setSingers] = useState<{ id: string; name: string }[]>([]);
   const [holidays, setHolidays] = useState<{ id: string; name: string }[]>([]);
@@ -59,6 +62,8 @@ export default function VideosPage() {
   const [language, setLanguage] = useState("");
   const [qualityMin, setQualityMin] = useState("");
   const [qualityMax, setQualityMax] = useState("");
+  const [durationMin, setDurationMin] = useState("");
+  const [durationMax, setDurationMax] = useState("");
   const [activeFilter, setActiveFilter] = useState("");
   const [singerIds, setSingerIds] = useState<string[]>([]);
   const [holidayIds, setHolidayIds] = useState<string[]>([]);
@@ -78,10 +83,12 @@ export default function VideosPage() {
     setLoading(true);
     const params = new URLSearchParams();
     if (q) params.set("q", q);
-    if (genreId) params.set("genreId", genreId);
+    if (genreIds.length) params.set("genreIds", genreIds.join(","));
     if (language) params.set("language", language);
     if (qualityMin) params.set("qualityMin", qualityMin);
     if (qualityMax) params.set("qualityMax", qualityMax);
+    if (durationMin) params.set("durationMin", durationMin);
+    if (durationMax) params.set("durationMax", durationMax);
     if (activeFilter) params.set("active", activeFilter);
     if (singerIds.length) params.set("singerIds", singerIds.join(","));
     if (holidayIds.length) params.set("holidayIds", holidayIds.join(","));
@@ -115,10 +122,12 @@ export default function VideosPage() {
     setLoading(false);
   }, [
     q,
-    genreId,
+    genreIds,
     language,
     qualityMin,
     qualityMax,
+    durationMin,
+    durationMax,
     activeFilter,
     singerIds,
     holidayIds,
@@ -129,6 +138,19 @@ export default function VideosPage() {
     order,
     page,
   ]);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        genreDropdownRef.current &&
+        !genreDropdownRef.current.contains(e.target as Node)
+      ) {
+        setGenreDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     fetch("/api/genres").then((r) => r.json()).then(setGenres);
@@ -246,14 +268,24 @@ export default function VideosPage() {
           <a
             href={`/api/export/videos?${new URLSearchParams({
               ...(q && { q }),
-              ...(genreId && { genreId }),
+              ...(genreIds.length && { genreIds: genreIds.join(",") }),
               ...(language && { language }),
               ...(qualityMin && { qualityMin }),
               ...(qualityMax && { qualityMax }),
+              ...(durationMin && { durationMin }),
+              ...(durationMax && { durationMax }),
               ...(activeFilter && { active: activeFilter }),
               ...(singerIds.length && { singerIds: singerIds.join(",") }),
               ...(holidayIds.length && { holidayIds: holidayIds.join(",") }),
               ...(tagIds.length && { tagIds: tagIds.join(",") }),
+              ...(recentlyPublished &&
+                recentlyPublishedDays && {
+                  publishDateFrom: (() => {
+                    const from = new Date();
+                    from.setDate(from.getDate() - recentlyPublishedDays);
+                    return from.toISOString();
+                  })(),
+                }),
             }).toString()}`}
             className="rounded border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50"
           >
@@ -271,7 +303,7 @@ export default function VideosPage() {
       <div className="mb-4 flex flex-wrap gap-4 rounded border border-slate-200 bg-white p-4">
         <input
           type="text"
-          placeholder="Search..."
+          placeholder="Search title, description..."
           value={q}
           onChange={(e) => {
             setQ(e.target.value);
@@ -280,21 +312,42 @@ export default function VideosPage() {
           onKeyDown={(e) => e.key === "Enter" && fetchVideos()}
           className="rounded border border-slate-300 px-3 py-1.5 text-sm"
         />
-        <select
-          value={genreId}
-          onChange={(e) => {
-            setGenreId(e.target.value);
-            setPage(1);
-          }}
-          className="rounded border border-slate-300 px-3 py-1.5 text-sm"
-        >
-          <option value="">All genres</option>
-          {genres.map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.name}
-            </option>
-          ))}
-        </select>
+        <div ref={genreDropdownRef} className="relative">
+          <button
+            type="button"
+            onClick={() => setGenreDropdownOpen((o) => !o)}
+            className="flex items-center gap-1 rounded border border-slate-300 bg-white px-3 py-1.5 text-sm hover:bg-slate-50"
+          >
+            Genres
+            {genreIds.length > 0 && (
+              <span className="rounded bg-slate-200 px-1.5 text-xs">
+                {genreIds.length}
+              </span>
+            )}
+            <span className="text-slate-400">▾</span>
+          </button>
+          {genreDropdownOpen && (
+            <div className="absolute left-0 top-full z-10 mt-1 max-h-48 w-48 overflow-y-auto rounded border border-slate-200 bg-white py-1 shadow-lg">
+              {genres.map((g) => (
+                <label
+                  key={g.id}
+                  className="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm hover:bg-slate-50"
+                >
+                  <input
+                    type="checkbox"
+                    checked={genreIds.includes(g.id)}
+                    onChange={() => {
+                      toggleMulti(g.id, genreIds, setGenreIds);
+                      setPage(1);
+                    }}
+                    className="rounded"
+                  />
+                  {g.name}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
         <select
           value={`${sort}-${order}`}
           onChange={(e) => {
@@ -323,12 +376,6 @@ export default function VideosPage() {
           className="text-sm text-blue-600 hover:underline"
         >
           {showAdvanced ? "Hide" : "Show"} advanced filters
-        </button>
-        <button
-          onClick={() => fetchVideos()}
-          className="rounded bg-slate-200 px-3 py-1.5 text-sm hover:bg-slate-300"
-        >
-          Apply
         </button>
       </div>
 
@@ -374,6 +421,34 @@ export default function VideosPage() {
                   setPage(1);
                 }}
                 className="w-16 rounded border px-2 py-0.5 text-sm"
+              />
+            </div>
+            <div>
+              <label className="mr-1 text-xs">Duration min (sec)</label>
+              <input
+                type="number"
+                min={0}
+                value={durationMin}
+                onChange={(e) => {
+                  setDurationMin(e.target.value);
+                  setPage(1);
+                }}
+                placeholder="0"
+                className="w-20 rounded border px-2 py-0.5 text-sm"
+              />
+            </div>
+            <div>
+              <label className="mr-1 text-xs">Duration max (sec)</label>
+              <input
+                type="number"
+                min={0}
+                value={durationMax}
+                onChange={(e) => {
+                  setDurationMax(e.target.value);
+                  setPage(1);
+                }}
+                placeholder="—"
+                className="w-20 rounded border px-2 py-0.5 text-sm"
               />
             </div>
             <div>
@@ -506,6 +581,9 @@ export default function VideosPage() {
                     Source
                   </th>
                   <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">
+                    Channel
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">
                     Actions
                   </th>
                 </tr>
@@ -550,6 +628,11 @@ export default function VideosPage() {
                     </td>
                     <td className="px-4 py-2 text-sm text-slate-600">
                       {v.sourceType}
+                    </td>
+                    <td className="px-4 py-2 text-sm text-slate-600">
+                      {v.sourceType === "YOUTUBE" && v.youtubeChannelName
+                        ? v.youtubeChannelName
+                        : "—"}
                     </td>
                     <td className="px-4 py-2">
                       <Link

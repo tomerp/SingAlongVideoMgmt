@@ -53,7 +53,9 @@
       "viewCount": 1250000,
       "likeCount": 15200,
       "commentCount": 342,
-      "url": "https://www.youtube.com/watch?v=mock-vid-1"
+      "url": "https://www.youtube.com/watch?v=mock-vid-1",
+      "copyright": true,
+      "categoryName": "Music"
     },
     {
       "id": "mock-vid-2",
@@ -64,7 +66,9 @@
       "viewCount": 890000,
       "likeCount": 11100,
       "commentCount": 220,
-      "url": "https://www.youtube.com/watch?v=mock-vid-2"
+      "url": "https://www.youtube.com/watch?v=mock-vid-2",
+      "copyright": true,
+      "categoryName": "Music"
     },
     {
       "id": "mock-vid-3",

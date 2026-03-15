@@ -26,7 +26,7 @@ export function getSyncSource(): SyncSource {
 
 export async function syncChannels(
   channelIds: string[],
-  defaultGenreId: string,
+  _defaultGenreId: string,
   options?: { syncConnectedChannel?: boolean }
 ): Promise<{
   imported: { videos: number; playlists: number };
@@ -39,11 +39,19 @@ export async function syncChannels(
   }[];
 }> {
   const source = getSyncSource();
-  const genre = defaultGenreId
-    ? await prisma.genre.findUnique({ where: { id: defaultGenreId } })
-    : await prisma.genre.findFirst();
-  if (!genre) {
+  const fallbackGenre = await prisma.genre.findFirst();
+  if (!fallbackGenre) {
     throw new Error("No genre found. Create at least one genre in Setup first.");
+  }
+
+  async function getGenreForCategory(categoryName: string | undefined): Promise<{ id: string }> {
+    const name = categoryName?.trim();
+    if (!name) return fallbackGenre;
+    return prisma.genre.upsert({
+      where: { name },
+      create: { name },
+      update: {},
+    });
   }
 
   const imported = { videos: 0, playlists: 0 };
@@ -103,7 +111,7 @@ export async function syncChannels(
 
   for (const { channelId, channelName: name, useOAuth } of channelsToSync) {
     let channelName: string | undefined = name;
-    let videos: { id: string; title: string; description?: string; duration: number; publishDate: Date; viewCount: number; likeCount: number; commentCount: number; url: string }[];
+    let videos: { id: string; title: string; description?: string; duration: number; publishDate: Date; viewCount: number; likeCount: number; commentCount: number; url: string; copyright: boolean; categoryName?: string }[];
     let playlists: { id: string; channelId: string; name: string; videoIds: string[] }[];
     let reportedVideoCount: number | undefined;
 
@@ -119,6 +127,8 @@ export async function syncChannels(
         publishDate: new Date(v.publishDate),
         likeCount: v.likeCount ?? 0,
         commentCount: v.commentCount ?? 0,
+        copyright: v.copyright ?? false,
+        categoryName: v.categoryName,
       }));
       playlists = getMockPlaylists(channelId);
       for (const pl of playlists) {
@@ -151,6 +161,7 @@ export async function syncChannels(
       });
       const descPreview = v.description ? v.description.slice(0, 150) : null;
 
+      const channelDisplayName = channelName ?? channelId;
       if (existing) {
         await prisma.video.update({
           where: { id: existing.id },
@@ -164,9 +175,13 @@ export async function syncChannels(
             likeCount: v.likeCount,
             commentCount: v.commentCount,
             url: v.url,
+            copyright: v.copyright,
+            youtubeChannelId: channelId,
+            youtubeChannelName: channelDisplayName,
           },
         });
       } else {
+        const genre = await getGenreForCategory(v.categoryName);
         await prisma.video.create({
           data: {
             title: v.title,
@@ -178,8 +193,11 @@ export async function syncChannels(
             likeCount: v.likeCount,
             commentCount: v.commentCount,
             url: v.url,
+            copyright: v.copyright,
             sourceType: SourceType.YOUTUBE,
             youtubeVideoId: v.id,
+            youtubeChannelId: channelId,
+            youtubeChannelName: channelDisplayName,
             genreId: genre.id,
             active: true,
           },
@@ -202,8 +220,16 @@ export async function syncChannels(
       });
 
       let playlistId: string;
+      const channelDisplayName = channelName ?? channelId;
       if (existingPl) {
         playlistId = existingPl.id;
+        await prisma.playlist.update({
+          where: { id: existingPl.id },
+          data: {
+            youtubeChannelId: channelId,
+            youtubeChannelName: channelDisplayName,
+          },
+        });
         await prisma.playlistVideo.deleteMany({ where: { playlistId } });
       } else {
         const created = await prisma.playlist.create({
@@ -211,12 +237,13 @@ export async function syncChannels(
             name: pl.name,
             type: PlaylistType.YOUTUBE,
             youtubePlaylistId: pl.id,
+            youtubeChannelId: channelId,
+            youtubeChannelName: channelDisplayName,
           },
         });
         playlistId = created.id;
         imported.playlists++;
       }
-
       const videoRecords = await prisma.video.findMany({
         where: { youtubeVideoId: { in: pl.videoIds } },
       });

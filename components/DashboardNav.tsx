@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useUnsavedChanges } from "@/components/UnsavedChangesProvider";
 
 const navItems = [
   { href: "/dashboard/videos", label: "Videos" },
@@ -14,6 +15,28 @@ const navItems = [
 
 export function DashboardNav() {
   const pathname = usePathname();
+  const router = useRouter();
+  const unsaved = useUnsavedChanges();
+
+  const isOnEventEditPage =
+    pathname.startsWith("/dashboard/events/") && pathname !== "/dashboard/events";
+
+  function handleNavClick(
+    e: React.MouseEvent<HTMLAnchorElement>,
+    href: string
+  ) {
+    if (
+      unsaved?.hasUnsavedChanges &&
+      isOnEventEditPage &&
+      pathname !== href
+    ) {
+      e.preventDefault();
+      if (confirm("You have unsaved changes. Leave without saving?")) {
+        unsaved.setHasUnsavedChanges(false);
+        router.push(href);
+      }
+    }
+  }
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -28,6 +51,7 @@ export function DashboardNav() {
             <Link
               key={href}
               href={href}
+              onClick={(e) => handleNavClick(e, href)}
               className={`text-sm font-medium ${
                 pathname === href || pathname.startsWith(href + "/")
                   ? "text-blue-600"

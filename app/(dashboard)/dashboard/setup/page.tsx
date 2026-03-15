@@ -201,6 +201,10 @@ export default function SetupPage() {
   const [recentlyPublishedDays, setRecentlyPublishedDays] = useState(60);
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsError, setSettingsError] = useState("");
+  const [settingsSaved, setSettingsSaved] = useState(false);
+  const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [resetConfirmText, setResetConfirmText] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
 
   const fetchGenres = useCallback(async () => {
     const res = await fetch("/api/genres");
@@ -389,6 +393,7 @@ export default function SetupPage() {
               onSubmit={async (e) => {
                 e.preventDefault();
                 setSettingsError("");
+                setSettingsSaved(false);
                 setSettingsLoading(true);
                 try {
                   const res = await fetch("/api/settings", {
@@ -400,6 +405,8 @@ export default function SetupPage() {
                   });
                   const data = await res.json();
                   if (!res.ok) throw data;
+                  setSettingsSaved(true);
+                  setTimeout(() => setSettingsSaved(false), 3000);
                 } catch (err: unknown) {
                   setSettingsError(
                     (err as { error?: string })?.error || "Failed to save"
@@ -441,6 +448,97 @@ export default function SetupPage() {
             {settingsError && (
               <p className="mt-2 text-sm text-red-600">{settingsError}</p>
             )}
+            {settingsSaved && (
+              <p className="mt-2 text-sm text-green-600">Saved.</p>
+            )}
+          </div>
+
+          <div className="rounded border border-red-200 bg-red-50 p-4">
+            <h3 className="mb-2 font-semibold text-red-800">
+              Danger Zone
+            </h3>
+            <p className="mb-3 text-sm text-red-700">
+              Reset will permanently delete all videos, events, playlists,
+              genres, singers, holidays, tags, and settings. This cannot be
+              undone.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setResetModalOpen(true);
+                setResetConfirmText("");
+              }}
+              className="rounded bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+            >
+              Reset All Data
+            </button>
+          </div>
+        </div>
+      )}
+
+      {resetModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          onClick={() => !resetLoading && setResetModalOpen(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg"
+          >
+            <h2 className="mb-2 text-lg font-semibold text-red-800">
+              Reset All Data
+            </h2>
+            <p className="mb-4 text-sm text-slate-600">
+              This will permanently delete everything: videos, events, playlists,
+              genres, singers, holidays, tags, and settings. This cannot be
+              undone.
+            </p>
+            <p className="mb-2 text-sm font-medium text-slate-700">
+              Type <strong>RESET</strong> to confirm:
+            </p>
+            <input
+              type="text"
+              value={resetConfirmText}
+              onChange={(e) => setResetConfirmText(e.target.value.toUpperCase())}
+              placeholder="RESET"
+              className="mb-4 w-full rounded border border-slate-300 px-3 py-2 text-sm uppercase"
+              autoFocus
+              disabled={resetLoading}
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setResetModalOpen(false)}
+                disabled={resetLoading}
+                className="rounded border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (resetConfirmText !== "RESET") return;
+                  setResetLoading(true);
+                  try {
+                    const res = await fetch("/api/reset", { method: "POST" });
+                    const data = await res.json();
+                    if (!res.ok) throw data;
+                    setResetModalOpen(false);
+                    window.location.href = "/dashboard";
+                  } catch (err) {
+                    alert(
+                      (err as { error?: string })?.error || "Failed to reset"
+                    );
+                  } finally {
+                    setResetLoading(false);
+                  }
+                }}
+                disabled={resetLoading || resetConfirmText !== "RESET"}
+                className="rounded bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {resetLoading ? "Resetting..." : "Reset Everything"}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -79,6 +79,12 @@ export async function DELETE(
   const playlist = await prisma.playlist.findUnique({ where: { id } });
   if (!playlist)
     return NextResponse.json({ error: "Playlist not found" }, { status: 404 });
+  if (playlist.type === "YOUTUBE") {
+    return NextResponse.json(
+      { error: "YouTube playlists cannot be deleted" },
+      { status: 400 }
+    );
+  }
   await prisma.playlist.delete({ where: { id } });
   return NextResponse.json({ success: true });
 }

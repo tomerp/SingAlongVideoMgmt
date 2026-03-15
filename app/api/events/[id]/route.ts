@@ -66,11 +66,13 @@ export async function PATCH(
 
     const newVideoIds = videoIds as string[];
     const added = newVideoIds.filter((vid) => !prevVideoIds.includes(vid));
+    const removed = prevVideoIds.filter((vid) => !newVideoIds.includes(vid));
     const date = updateData.eventDate || event.eventDate;
 
+    const updates: Promise<unknown>[] = [];
     if (added.length) {
-      await prisma.$transaction(
-        added.map((videoId: string) =>
+      updates.push(
+        ...added.map((videoId: string) =>
           prisma.video.update({
             where: { id: videoId },
             data: {
@@ -80,6 +82,19 @@ export async function PATCH(
           })
         )
       );
+    }
+    if (removed.length) {
+      updates.push(
+        ...removed.map((videoId: string) =>
+          prisma.video.update({
+            where: { id: videoId },
+            data: { usedCount: { decrement: 1 } },
+          })
+        )
+      );
+    }
+    if (updates.length) {
+      await prisma.$transaction(updates);
     }
   }
 
@@ -108,6 +123,23 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const eventVideos = await prisma.eventVideo.findMany({
+    where: { eventId: id },
+    select: { videoId: true },
+  });
+  const videoIds = eventVideos.map((ev) => ev.videoId);
+
   await prisma.event.delete({ where: { id } });
+
+  if (videoIds.length) {
+    await prisma.$transaction(
+      videoIds.map((videoId: string) =>
+        prisma.video.update({
+          where: { id: videoId },
+          data: { usedCount: { decrement: 1 } },
+        })
+      )
+    );
+  }
   return NextResponse.json({ success: true });
 }

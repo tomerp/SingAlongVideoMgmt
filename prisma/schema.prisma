@@ -92,6 +92,8 @@ model Video {
   url              String?
   sourceType       SourceType
   youtubeVideoId   String?  @unique
+  youtubeChannelId String?
+  youtubeChannelName String?
   filePath         String?
   language         String?
   tempo            String?
@@ -162,13 +164,15 @@ model YouTubeChannel {
 }
 
 model Playlist {
-  id                String       @id @default(cuid())
-  name              String
-  type              PlaylistType
-  youtubePlaylistId String?      @unique
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
-  videos            PlaylistVideo[]
+  id                  String       @id @default(cuid())
+  name                String
+  type                PlaylistType
+  youtubePlaylistId   String?      @unique
+  youtubeChannelId   String?
+  youtubeChannelName  String?
+  createdAt           DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  videos              PlaylistVideo[]
 }
 
 model PlaylistVideo {

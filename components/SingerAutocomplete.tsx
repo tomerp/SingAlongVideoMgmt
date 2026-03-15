@@ -52,22 +52,20 @@ export function SingerAutocomplete({
   }, [value, initialSingers]);
 
   useEffect(() => {
-    if (!debouncedInput.trim()) {
-      setSuggestions([]);
-      setOpen(false);
-      return;
-    }
+    if (!open) return;
     setLoading(true);
-    fetch(`/api/singers?q=${encodeURIComponent(debouncedInput)}`)
+    const url = debouncedInput.trim()
+      ? `/api/singers?q=${encodeURIComponent(debouncedInput)}`
+      : "/api/singers";
+    fetch(url)
       .then((r) => r.json())
       .then((data: Singer[]) => {
         const selectedIds = new Set(value);
         setSuggestions(data.filter((s) => !selectedIds.has(s.id)));
-        setOpen(true);
       })
       .catch(() => setSuggestions([]))
       .finally(() => setLoading(false));
-  }, [debouncedInput, value]);
+  }, [debouncedInput, value, open]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -160,7 +158,7 @@ export function SingerAutocomplete({
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onFocus={() => input.trim() && setOpen(true)}
+          onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder="Type singer name..."
           className="min-w-[140px] flex-1 border-0 bg-transparent px-1 py-0.5 text-sm outline-none"
@@ -171,7 +169,7 @@ export function SingerAutocomplete({
           Searching...
         </div>
       )}
-      {open && suggestions.length > 0 && !loading && (
+      {open && !loading && (suggestions.length > 0 || input.trim()) && (
         <ul className="absolute left-0 right-0 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded border border-slate-200 bg-white py-1 shadow-lg">
           {suggestions.map((s) => (
             <li key={s.id}>

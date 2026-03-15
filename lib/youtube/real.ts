@@ -19,6 +19,12 @@ export interface YouTubeVideo {
   likeCount: number;
   commentCount: number;
   url: string;
+  /** From contentDetails.licensedContent - indicates licensed/copyrighted content */
+  copyright: boolean;
+  /** YouTube category ID (e.g. "10" for Music) */
+  categoryId?: string;
+  /** YouTube category title from videoCategories API */
+  categoryName?: string;
 }
 
 export interface YouTubePlaylist {
@@ -72,6 +78,26 @@ export async function resolveChannelId(
     channelId: ch.id,
     channelName: ch.snippet?.title || ch.id,
   };
+}
+
+async function fetchCategoryNames(
+  auth: YouTubeAuth,
+  categoryIds: string[]
+): Promise<Map<string, string>> {
+  const unique = [...new Set(categoryIds.filter(Boolean))];
+  if (unique.length === 0) return new Map();
+  const youtube = google.youtube({ version: "v3", auth });
+  const res = await youtube.videoCategories.list({
+    part: ["snippet"],
+    id: unique,
+  });
+  const map = new Map<string, string>();
+  for (const item of res.data.items ?? []) {
+    if (item.id && item.snippet?.title) {
+      map.set(item.id, item.snippet.title);
+    }
+  }
+  return map;
 }
 
 function parseYouTubeDuration(iso: string): number {
@@ -252,6 +278,7 @@ export async function getChannelVideos(
   }
 
   const videos: YouTubeVideo[] = [];
+  const categoryIds: string[] = [];
   for (let i = 0; i < videoIds.length; i += 50) {
     const batch = videoIds.slice(i, i + 50);
     const videoRes = await youtube.videos.list({
@@ -265,6 +292,9 @@ export async function getChannelVideos(
       const publishDate = item.snippet?.publishedAt
         ? new Date(item.snippet.publishedAt)
         : new Date();
+      const licensedContent = item.contentDetails?.licensedContent === true;
+      const catId = item.snippet?.categoryId;
+      if (catId) categoryIds.push(catId);
       videos.push({
         id: item.id!,
         title: item.snippet?.title || "",
@@ -275,8 +305,14 @@ export async function getChannelVideos(
         likeCount: parseInt(item.statistics?.likeCount || "0", 10),
         commentCount: parseInt(item.statistics?.commentCount || "0", 10),
         url: `https://www.youtube.com/watch?v=${item.id}`,
+        copyright: licensedContent,
+        categoryId: catId,
       });
     }
+  }
+  const categoryNames = await fetchCategoryNames(auth, categoryIds);
+  for (const v of videos) {
+    if (v.categoryId) v.categoryName = categoryNames.get(v.categoryId);
   }
   return { videos, reportedVideoCount };
 }
@@ -304,6 +340,7 @@ export async function getPlaylistVideos(
   } while (nextPageToken);
 
   const videos: YouTubeVideo[] = [];
+  const categoryIds: string[] = [];
   for (let i = 0; i < videoIds.length; i += 50) {
     const batch = videoIds.slice(i, i + 50);
     const videoRes = await youtube.videos.list({
@@ -317,6 +354,9 @@ export async function getPlaylistVideos(
       const publishDate = item.snippet?.publishedAt
         ? new Date(item.snippet.publishedAt)
         : new Date();
+      const licensedContent = item.contentDetails?.licensedContent === true;
+      const catId = item.snippet?.categoryId;
+      if (catId) categoryIds.push(catId);
       videos.push({
         id: item.id!,
         title: item.snippet?.title || "",
@@ -327,8 +367,14 @@ export async function getPlaylistVideos(
         likeCount: parseInt(item.statistics?.likeCount || "0", 10),
         commentCount: parseInt(item.statistics?.commentCount || "0", 10),
         url: `https://www.youtube.com/watch?v=${item.id}`,
+        copyright: licensedContent,
+        categoryId: catId,
       });
     }
+  }
+  const categoryNames = await fetchCategoryNames(auth, categoryIds);
+  for (const v of videos) {
+    if (v.categoryId) v.categoryName = categoryNames.get(v.categoryId);
   }
   return videos;
 }
