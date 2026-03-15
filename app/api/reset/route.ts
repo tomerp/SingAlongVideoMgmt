@@ -1,9 +1,18 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
+const DEFAULT_GENRES = [
+  "Oldies",
+  "Hebrew",
+  "Oriental",
+  "Comedy",
+  "Love",
+  "War",
+];
+
 /**
  * POST /api/reset
- * Deletes all application data. Use with caution.
+ * Deletes all application data and restores default genres. Use with caution.
  * Order respects foreign key constraints and cascades.
  */
 export async function POST() {
@@ -20,6 +29,10 @@ export async function POST() {
       await tx.setting.deleteMany({});
       await tx.youTubeConnection.deleteMany({});
       await tx.youTubeChannel.deleteMany({});
+
+      for (const name of DEFAULT_GENRES) {
+        await tx.genre.create({ data: { name } });
+      }
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
