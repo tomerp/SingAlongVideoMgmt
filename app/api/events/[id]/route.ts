@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
@@ -69,7 +70,7 @@ export async function PATCH(
     const removed = prevVideoIds.filter((vid) => !newVideoIds.includes(vid));
     const date = updateData.eventDate || event.eventDate;
 
-    const updates: Promise<unknown>[] = [];
+    const updates: Prisma.PrismaPromise<unknown>[] = [];
     if (added.length) {
       updates.push(
         ...added.map((videoId: string) =>

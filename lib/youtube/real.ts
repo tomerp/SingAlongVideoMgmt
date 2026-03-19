@@ -84,7 +84,7 @@ async function fetchCategoryNames(
   auth: YouTubeAuth,
   categoryIds: string[]
 ): Promise<Map<string, string>> {
-  const unique = [...new Set(categoryIds.filter(Boolean))];
+  const unique = Array.from(new Set(categoryIds.filter(Boolean)));
   if (unique.length === 0) return new Map();
   const youtube = google.youtube({ version: "v3", auth });
   const res = await youtube.videoCategories.list({
@@ -293,7 +293,7 @@ export async function getChannelVideos(
         ? new Date(item.snippet.publishedAt)
         : new Date();
       const licensedContent = item.contentDetails?.licensedContent === true;
-      const catId = item.snippet?.categoryId;
+      const catId = item.snippet?.categoryId ?? undefined;
       if (catId) categoryIds.push(catId);
       videos.push({
         id: item.id!,
@@ -355,7 +355,7 @@ export async function getPlaylistVideos(
         ? new Date(item.snippet.publishedAt)
         : new Date();
       const licensedContent = item.contentDetails?.licensedContent === true;
-      const catId = item.snippet?.categoryId;
+      const catId = item.snippet?.categoryId ?? undefined;
       if (catId) categoryIds.push(catId);
       videos.push({
         id: item.id!,

@@ -43,10 +43,11 @@ export async function syncChannels(
   if (!fallbackGenre) {
     throw new Error("No genre found. Create at least one genre in Setup first.");
   }
+  const fallbackGenreId = fallbackGenre.id;
 
   async function getGenreForCategory(categoryName: string | undefined): Promise<{ id: string }> {
     const name = categoryName?.trim();
-    if (!name) return fallbackGenre;
+    if (!name) return { id: fallbackGenreId };
     return prisma.genre.upsert({
       where: { name },
       create: { name },
