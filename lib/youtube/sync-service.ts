@@ -245,15 +245,16 @@ export async function syncChannels(
         playlistId = created.id;
         imported.playlists++;
       }
+      const uniquePlaylistVideoIds = Array.from(new Set(pl.videoIds));
       const videoRecords = await prisma.video.findMany({
-        where: { youtubeVideoId: { in: pl.videoIds } },
+        where: { youtubeVideoId: { in: uniquePlaylistVideoIds } },
       });
       const vidMap = new Map(
         videoRecords.map((vr) => [vr.youtubeVideoId!, vr.id])
       );
 
       let order = 0;
-      for (const vid of pl.videoIds) {
+      for (const vid of uniquePlaylistVideoIds) {
         const videoId = vidMap.get(vid);
         if (videoId) {
           await prisma.playlistVideo.create({
